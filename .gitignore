@@ -47,3 +47,6 @@ htmlcov/
 # Temporary
 tmp/
 temp/
+
+# Ruff
+.ruff_cache/
