@@ -2,6 +2,7 @@
 
 import sys
 import os
+
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_password")
 os.environ.setdefault("WWW_SEARCH_SECRET_KEY", "test_secret_key_for_testing_deep")
 sys.path.insert(0, os.path.dirname(__file__))
@@ -35,7 +36,12 @@ def fail(msg, detail=""):
 def test_db_lazy_init():
     """验证懒初始化：首次 get_db() 时创建表（通过独立子进程验证）"""
     import subprocess
-    result = subprocess.run(["python3", "-c", """
+
+    result = subprocess.run(
+        [
+            "python3",
+            "-c",
+            """
 import sys, os
 sys.path.insert(0, '/Users/liuchen/projects/www_search')
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test")
@@ -51,7 +57,12 @@ with get_db() as conn:
     rows = conn.execute('SELECT COUNT(*) FROM users').fetchone()
     assert rows[0] >= 0, '应能查询用户表'
 print('OK')
-"""], capture_output=True, text=True, timeout=10)
+""",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
     if result.returncode != 0:
         fail("DB 懒初始化", result.stderr)
         return
@@ -77,6 +88,7 @@ def test_db_create_user():
 
     # 禁用 API Key 后验证应失败
     from db import toggle_user
+
     toggled = toggle_user(user["id"])
     assert toggled["enabled"] == False
     verified_disabled = verify_api_key(user["api_key"])
@@ -126,6 +138,7 @@ def test_db_estimate_tokens_edge():
 def test_db_get_user_nonexistent():
     """验证查询不存在用户"""
     from db import get_user
+
     user = get_user(99999)
     assert user is None
     ok("查询不存在用户返回 None")
@@ -134,6 +147,7 @@ def test_db_get_user_nonexistent():
 def test_db_toggle_nonexistent():
     """验证切换不存在用户"""
     from db import toggle_user
+
     try:
         toggle_user(99999)
         fail("toggle_user 应抛出 ValueError")
@@ -144,6 +158,7 @@ def test_db_toggle_nonexistent():
 def test_db_regenerate_nonexistent():
     """验证重新生成不存在用户的 key"""
     from db import regenerate_key
+
     try:
         regenerate_key(99999)
         fail("regenerate_key 应抛出 ValueError")
@@ -182,6 +197,7 @@ def test_fetcher_invalid_urls():
 def test_fetcher_extract_multiple_empty():
     """验证空列表提取"""
     from fetcher.web import extract_multiple
+
     results = extract_multiple([])
     assert results == []
     ok("空列表提取返回空")
@@ -190,9 +206,9 @@ def test_fetcher_extract_multiple_empty():
 def test_fetcher_extract_multiple_mixed():
     """验证混合有效/无效 URL 提取"""
     from fetcher.web import extract_multiple
+
     results = extract_multiple(
-        ["http://example.com", "javascript:alert(1)", "file:///etc/passwd"],
-        timeout=5
+        ["http://example.com", "javascript:alert(1)", "file:///etc/passwd"], timeout=5
     )
     # 无效 URL 被跳过，有效 URL 尝试连接
     assert len(results) >= 0
@@ -244,15 +260,11 @@ def test_llm_extract_content():
     from llm.client import LLMClient
 
     # 测试各种响应格式
-    response1 = {
-        "choices": [{"message": {"content": "hello"}}]
-    }
+    response1 = {"choices": [{"message": {"content": "hello"}}]}
     response2 = {
         "choices": [{"message": {"reasoning_content": "思考", "content": "answer"}}]
     }
-    response3 = {
-        "choices": [{"message": {}}]
-    }
+    response3 = {"choices": [{"message": {}}]}
 
     # 私有方法测试
     client = object()  # 仅测试函数逻辑
@@ -269,8 +281,11 @@ def test_llm_extract_content():
 def test_search_all_no_engines():
     """验证无搜索引擎时搜索"""
     from search import search_all
+
     try:
-        results = search_all("test", max_results=5, config_path=str(Path(BASE_DIR) / "config.yaml"))
+        results = search_all(
+            "test", max_results=5, config_path=str(Path(BASE_DIR) / "config.yaml")
+        )
         assert len(results) >= 0
         ok("search_all 至少不崩溃")
     except Exception as e:
@@ -284,6 +299,7 @@ def test_admin_login_invalid_password():
     """验证 admin 配置正确加载"""
     # 确保环境变量已设置（文件顶部用 setdefault 设置的）
     import middleware
+
     if middleware.ADMIN_PASSWORD is None:
         try:
             middleware.init_admin_config()
@@ -315,6 +331,7 @@ def test_admin_csrf_validation():
 def test_config_api_key_from_env():
     """验证 API Key 从环境变量读取"""
     import yaml
+
     config_path = str(Path(BASE_DIR) / "config.yaml")
     with open(config_path) as f:
         cfg = yaml.safe_load(f)
@@ -324,6 +341,7 @@ def test_config_api_key_from_env():
 
     # 验证 llm/client.py 读取环境变量
     from llm.client import LLMClient
+
     client = LLMClient(config_path)
     assert client.api_key is not None
     ok("API Key 配置正确")
@@ -351,7 +369,7 @@ def test_security_headers():
     # 检查安全头中间件
     has_security = False
     for m in app.user_middleware:
-        if hasattr(m, 'cls') and 'add_security_headers' in str(m.cls):
+        if hasattr(m, "cls") and "add_security_headers" in str(m.cls):
             has_security = True
     ok("安全响应头中间件已注册")
 
@@ -359,6 +377,7 @@ def test_security_headers():
 def test_api_key_middleware_skip():
     """验证 API Key 中间件跳过逻辑"""
     from main import app
+
     assert True  # 中间件已注册
     ok("API Key 中间件已注册")
 
@@ -389,7 +408,9 @@ def test_concurrent_db_access():
         t.join()
 
     success_count = sum(results)
-    assert success_count > 0, f"并发创建用户应部分成功, 成功: {success_count}, 错误: {len(errors)}"
+    assert success_count > 0, (
+        f"并发创建用户应部分成功, 成功: {success_count}, 错误: {len(errors)}"
+    )
     ok(f"并发数据库访问成功 ({success_count}/{len(threads)})")
 
 
@@ -405,6 +426,7 @@ def test_main_app_import():
 def test_admin_app_no_password():
     """验证无密码时 init_admin_config 拒绝启动"""
     import importlib
+
     try:
         # 模拟清除密码环境变量
         old_pw = os.environ.get("WWW_SEARCH_ADMIN_PASSWORD")
@@ -413,9 +435,11 @@ def test_admin_app_no_password():
         os.environ.pop("WWW_SEARCH_SECRET_KEY", None)
         # 重新导入 middleware 模块以清除已初始化的状态
         from middleware import init_admin_config
+
         try:
             # 重置全局变量模拟未初始化状态
             import middleware
+
             middleware.ADMIN_PASSWORD = None
             middleware.SECRET_KEY = None
             middleware.session_serializer = None
@@ -469,6 +493,7 @@ def run():
         except Exception as e:
             fail(name, f"{type(e).__name__}: {e}")
             import traceback
+
             traceback.print_exc()
 
     print(f"\n深度测试结果: {PASS} 通过, {FAIL} 失败 / {PASS + FAIL} 总")

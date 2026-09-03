@@ -11,11 +11,13 @@ def search(query: str, max_results: int = 10) -> list[dict]:
     results = []
     with DDGS() as ddgs:
         for r in ddgs.text(query, max_results=max_results):
-            results.append({
-                "title": r.get("title", ""),
-                "url": r.get("href", ""),
-                "snippet": r.get("body", ""),
-            })
+            results.append(
+                {
+                    "title": r.get("title", ""),
+                    "url": r.get("href", ""),
+                    "snippet": r.get("body", ""),
+                }
+            )
     return results
 
 
@@ -25,7 +27,9 @@ def main():
         sys.exit(1)
 
     query = " ".join(sys.argv[1:-1]) if len(sys.argv) > 2 else sys.argv[1]
-    max_results = int(sys.argv[-1]) if len(sys.argv) > 2 and sys.argv[-1].isdigit() else 10
+    max_results = (
+        int(sys.argv[-1]) if len(sys.argv) > 2 and sys.argv[-1].isdigit() else 10
+    )
 
     results = search(query, max_results)
     print(json.dumps(results, ensure_ascii=False, indent=2))

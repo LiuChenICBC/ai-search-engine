@@ -11,8 +11,11 @@ from fetcher.web import extract_multiple, ExtractedContent
 from utils import validate_url
 from llm.client import LLMClient
 from config.constants import (
-    DEFAULT_MAX_RESULTS, DEFAULT_MAX_SCRAPE, DEFAULT_FETCH_TIMEOUT,
-    MAX_CONTENT_LENGTH, SOURCE_SNIPPET_LENGTH,
+    DEFAULT_MAX_RESULTS,
+    DEFAULT_MAX_SCRAPE,
+    DEFAULT_FETCH_TIMEOUT,
+    MAX_CONTENT_LENGTH,
+    SOURCE_SNIPPET_LENGTH,
 )
 
 logger = logging.getLogger("www_search.research")
@@ -21,6 +24,7 @@ logger = logging.getLogger("www_search.research")
 @dataclass
 class ResearchResult:
     """研究结果"""
+
     answer: str
     sources: list[dict] = field(default_factory=list)  # [{"title", "url", "snippet"}]
     search_results: list[SearchResult] = field(default_factory=list)
@@ -45,20 +49,29 @@ class ResearchAgent:
         self.search_cfg = self.config.get("search", {})
         self.fetcher_cfg = self.config.get("fetcher", {})
 
-    def _build_context_and_prompt(self, query: str, search_results: list[SearchResult], scraped: list[ExtractedContent]) -> list[dict]:
+    def _build_context_and_prompt(
+        self,
+        query: str,
+        search_results: list[SearchResult],
+        scraped: list[ExtractedContent],
+    ) -> list[dict]:
         """构建搜索上下文和 prompt（消除 _synthesize 和 _synthesize_stream 的代码重复）"""
         context_parts = []
         scraped_urls = {sc.url for sc in scraped}
 
         # 先添加成功抓取的页面内容
         for i, sc in enumerate(scraped):
-            context_parts.append(f"[来源 {i+1}] {sc.title}\nURL: {sc.url}\n{sc.content}")
+            context_parts.append(
+                f"[来源 {i + 1}] {sc.title}\nURL: {sc.url}\n{sc.content}"
+            )
 
         # 对于抓取失败的搜索结果，用摘要作为 fallback
         fallback_idx = len(scraped) + 1
         for r in search_results:
             if r.url not in scraped_urls and r.snippet:
-                context_parts.append(f"[来源 {fallback_idx}] {r.title}\nURL: {r.url}\n{r.snippet}")
+                context_parts.append(
+                    f"[来源 {fallback_idx}] {r.title}\nURL: {r.url}\n{r.snippet}"
+                )
                 fallback_idx += 1
 
         context = "\n\n---\n\n".join(context_parts)
@@ -90,19 +103,26 @@ class ResearchAgent:
 2. ..."""
 
         return [
-            {"role": "system", "content": "你是一个专业的研究助手，擅长综合多源信息给出准确回答。"},
+            {
+                "role": "system",
+                "content": "你是一个专业的研究助手，擅长综合多源信息给出准确回答。",
+            },
             {"role": "user", "content": prompt},
         ]
 
-    def _build_sources(self, search_results: list[SearchResult], scraped: list[ExtractedContent]) -> list[dict]:
+    def _build_sources(
+        self, search_results: list[SearchResult], scraped: list[ExtractedContent]
+    ) -> list[dict]:
         """构建 sources 列表"""
         sources = []
-        for r in search_results[:len(scraped)]:
-            sources.append({
-                "title": r.title,
-                "url": r.url,
-                "snippet": r.snippet[:SOURCE_SNIPPET_LENGTH],
-            })
+        for r in search_results[: len(scraped)]:
+            sources.append(
+                {
+                    "title": r.title,
+                    "url": r.url,
+                    "snippet": r.snippet[:SOURCE_SNIPPET_LENGTH],
+                }
+            )
         return sources
 
     def research(self, query: str) -> ResearchResult:
@@ -126,7 +146,13 @@ class ResearchAgent:
         )
 
         # 3. 并行抓取 Top 结果（SEC-C04: 过滤不安全 URL）
-        urls_to_scrape = [r.url for r in search_results[:self.search_cfg.get("max_scrape", DEFAULT_MAX_SCRAPE)] if validate_url(r.url)]
+        urls_to_scrape = [
+            r.url
+            for r in search_results[
+                : self.search_cfg.get("max_scrape", DEFAULT_MAX_SCRAPE)
+            ]
+            if validate_url(r.url)
+        ]
         scraped = extract_multiple(
             urls_to_scrape,
             timeout=self.fetcher_cfg.get("timeout", DEFAULT_FETCH_TIMEOUT),
@@ -158,7 +184,9 @@ class ResearchAgent:
         # 2. 搜索
         search_query = classification.get("query_rewrite", query) or query
         if search_query != query:
-            logger.info(f"[research_stream] 原始查询: '{query}' → 改写后: '{search_query}'")
+            logger.info(
+                f"[research_stream] 原始查询: '{query}' → 改写后: '{search_query}'"
+            )
         yield {"type": "status", "text": f"🌐 搜索: {search_query}"}
 
         search_results = search_all(
@@ -170,7 +198,13 @@ class ResearchAgent:
         yield {"type": "status", "text": f"✅ 找到 {len(search_results)} 个结果"}
 
         # 3. 并行抓取（SEC-C04: 过滤不安全 URL）
-        urls_to_scrape = [r.url for r in search_results[:self.search_cfg.get("max_scrape", DEFAULT_MAX_SCRAPE)] if validate_url(r.url)]
+        urls_to_scrape = [
+            r.url
+            for r in search_results[
+                : self.search_cfg.get("max_scrape", DEFAULT_MAX_SCRAPE)
+            ]
+            if validate_url(r.url)
+        ]
         yield {"type": "status", "text": f"📄 抓取 {len(urls_to_scrape)} 个页面..."}
 
         scraped = extract_multiple(
@@ -194,12 +228,22 @@ class ResearchAgent:
             yield {"type": "sources", "sources": sources}
             yield {"type": "done"}
 
-    def _synthesize(self, query: str, search_results: list[SearchResult], scraped: list[ExtractedContent]) -> str:
+    def _synthesize(
+        self,
+        query: str,
+        search_results: list[SearchResult],
+        scraped: list[ExtractedContent],
+    ) -> str:
         """综合搜索结果生成回答"""
         messages = self._build_context_and_prompt(query, search_results, scraped)
         return self.llm.chat(messages)
 
-    def _synthesize_stream(self, query: str, search_results: list[SearchResult], scraped: list[ExtractedContent]) -> Generator[str, None, None]:
+    def _synthesize_stream(
+        self,
+        query: str,
+        search_results: list[SearchResult],
+        scraped: list[ExtractedContent],
+    ) -> Generator[str, None, None]:
         """流式综合生成回答"""
         messages = self._build_context_and_prompt(query, search_results, scraped)
         for chunk in self.llm.chat_stream(messages):

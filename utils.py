@@ -10,7 +10,9 @@ from urllib.parse import urlparse
 from config.constants import DNS_RESOLVE_TIMEOUT
 
 
-def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0, logger: logging.Logger | None = None):
+def retry_with_backoff(
+    max_retries: int = 3, base_delay: float = 1.0, logger: logging.Logger | None = None
+):
     """带指数退避的重试装饰器工厂
 
     Args:
@@ -30,13 +32,17 @@ def retry_with_backoff(max_retries: int = 3, base_delay: float = 1.0, logger: lo
                 except Exception as e:
                     last_exc = e
                     if attempt < max_retries:
-                        delay = base_delay * (2 ** attempt)
-                        log.warning(f"请求失败 (尝试 {attempt+1}/{max_retries+1}): {e}，{delay}s 后重试...")
+                        delay = base_delay * (2**attempt)
+                        log.warning(
+                            f"请求失败 (尝试 {attempt + 1}/{max_retries + 1}): {e}，{delay}s 后重试..."
+                        )
                         time.sleep(delay)
                     else:
                         log.error(f"请求失败 (已重试 {max_retries} 次): {e}")
             raise last_exc
+
         return wrapper
+
     return decorator
 
 
@@ -102,12 +108,12 @@ def _resolve_with_timeout(hostname: str, timeout: float = DNS_RESOLVE_TIMEOUT):
 def normalize_url(url: str) -> str:
     """规范化 URL：小写 + 去除尾部斜杠，用于去重比较"""
     from urllib.parse import urlparse, urlunparse
-    
+
     parsed = urlparse(url)
     # 域名小写，路径保留原样（URL 路径通常区分大小写）
     normalized = parsed._replace(netloc=parsed.netloc.lower())
     # 去除尾部斜杠（根路径除外）
     path = normalized.path.rstrip("/") if normalized.path != "/" else "/"
     normalized = normalized._replace(path=path)
-    
+
     return urlunparse(normalized)

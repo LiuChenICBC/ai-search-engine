@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 def pytest_configure(config):
     """Pytest 启动时初始化 admin 配置"""
     from middleware import init_admin_config
+
     try:
         init_admin_config()
     except RuntimeError:

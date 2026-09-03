@@ -7,6 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class SearchResult:
     """搜索结果"""
+
     title: str
     url: str
     snippet: str

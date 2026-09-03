@@ -20,12 +20,14 @@ class DuckDuckGoSearch(BaseSearchEngine):
         try:
             with DDGS() as ddgs:
                 for r in ddgs.text(query, max_results=max_results, timeout=30):
-                    results.append(SearchResult(
-                        title=r.get("title", ""),
-                        url=r.get("href", ""),
-                        snippet=r.get("body", ""),
-                        score=0.0,
-                    ))
+                    results.append(
+                        SearchResult(
+                            title=r.get("title", ""),
+                            url=r.get("href", ""),
+                            snippet=r.get("body", ""),
+                            score=0.0,
+                        )
+                    )
         except Exception as e:
             logger.error(f"[ddgs] 搜索失败: {e}")
         return results

@@ -9,7 +9,10 @@ import concurrent.futures
 
 from utils import retry_with_backoff, validate_url
 from config.constants import (
-    FETCH_PARALLEL_TIMEOUT, FETCH_MAX_WORKERS, MAX_REDIRECTS, MIN_PARAGRAPH_LENGTH,
+    FETCH_PARALLEL_TIMEOUT,
+    FETCH_MAX_WORKERS,
+    MAX_REDIRECTS,
+    MIN_PARAGRAPH_LENGTH,
 )
 
 logger = logging.getLogger("www_search.fetcher")
@@ -18,10 +21,11 @@ logger = logging.getLogger("www_search.fetcher")
 @dataclass
 class ExtractedContent:
     """提取的网页内容"""
+
     url: str
     title: str
     content: str  # 纯文本正文
-    html: str     # 原始 HTML（可选）
+    html: str  # 原始 HTML（可选）
 
 
 # 全局 Session 池，复用连接
@@ -34,19 +38,21 @@ _adapter = requests.adapters.HTTPAdapter(
 )
 _session.mount("http://", _adapter)
 _session.mount("https://", _adapter)
-_session.headers.update({
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-    "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
-    "Sec-Fetch-Dest": "document",
-    "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-Site": "none",
-    "Sec-Fetch-User": "?1",
-    "Cache-Control": "max-age=0",
-})
+_session.headers.update(
+    {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0",
+    }
+)
 
 
 @retry_with_backoff(max_retries=2, base_delay=1.0, logger=logger)
@@ -72,7 +78,9 @@ def _fetch_url(url: str, timeout: float) -> str:
     return resp.text
 
 
-def extract_url(url: str, timeout: float = 15.0, max_length: int = 8000) -> Optional[ExtractedContent]:
+def extract_url(
+    url: str, timeout: float = 15.0, max_length: int = 8000
+) -> Optional[ExtractedContent]:
     """
     抓取网页并提取正文内容。
     使用 requests + BeautifulSoup 提取，去除导航/广告等噪音。
@@ -94,7 +102,18 @@ def extract_url(url: str, timeout: float = 15.0, max_length: int = 8000) -> Opti
                 soup = BeautifulSoup(html, "html.parser")
 
         # 移除噪音元素
-        for tag in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "iframe"]):
+        for tag in soup(
+            [
+                "script",
+                "style",
+                "nav",
+                "footer",
+                "header",
+                "aside",
+                "noscript",
+                "iframe",
+            ]
+        ):
             tag.decompose()
 
         # 提取标题
@@ -111,14 +130,20 @@ def extract_url(url: str, timeout: float = 15.0, max_length: int = 8000) -> Opti
         content = ""
 
         # 策略1: 找 article/main 标签
-        article = soup.find("article") or soup.find("main") or soup.find("div", class_="article-content")
+        article = (
+            soup.find("article")
+            or soup.find("main")
+            or soup.find("div", class_="article-content")
+        )
         if article:
             content = article.get_text(separator="\n", strip=True)
         else:
             # 策略2: 取 body 文本，按段落分割
             body = soup.find("body")
             if body:
-                paragraphs = body.find_all(["p", "h1", "h2", "h3", "h4", "li", "blockquote"])
+                paragraphs = body.find_all(
+                    ["p", "h1", "h2", "h3", "h4", "li", "blockquote"]
+                )
                 text_parts = []
                 for p in paragraphs:
                     t = p.get_text(strip=True)
@@ -142,12 +167,19 @@ def extract_url(url: str, timeout: float = 15.0, max_length: int = 8000) -> Opti
         return None
 
 
-def extract_multiple(urls: list[str], timeout: float = 15.0, max_length: int = 8000) -> list[ExtractedContent]:
+def extract_multiple(
+    urls: list[str], timeout: float = 15.0, max_length: int = 8000
+) -> list[ExtractedContent]:
     """并行抓取多个 URL（带超时）"""
     if not urls:
         return []
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(urls), FETCH_MAX_WORKERS)) as executor:
-        ft_list = [(executor.submit(extract_url, url, timeout, max_length), url) for url in urls]
+    with concurrent.futures.ThreadPoolExecutor(
+        max_workers=min(len(urls), FETCH_MAX_WORKERS)
+    ) as executor:
+        ft_list = [
+            (executor.submit(extract_url, url, timeout, max_length), url)
+            for url in urls
+        ]
         done, not_done = concurrent.futures.wait(
             [f for f, _ in ft_list],
             timeout=FETCH_PARALLEL_TIMEOUT,

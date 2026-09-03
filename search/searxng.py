@@ -13,7 +13,9 @@ logger = logging.getLogger("www_search.searxng")
 class SearXNGSearch(BaseSearchEngine):
     """SearXNG 元搜索引擎"""
 
-    def __init__(self, base_url: str, engines: list[str] | None = None, timeout: float = 10.0):
+    def __init__(
+        self, base_url: str, engines: list[str] | None = None, timeout: float = 10.0
+    ):
         if not validate_url(base_url):
             raise ValueError(f"SearXNG base_url 不安全或无效: {base_url}")
         self.base_url = base_url.rstrip("/")
@@ -59,11 +61,13 @@ class SearXNGSearch(BaseSearchEngine):
             if not validate_url(url):
                 logger.warning(f"[searxng] 跳过不安全 URL: {url}")
                 continue
-            results.append(SearchResult(
-                title=item.get("title", ""),
-                url=url,
-                snippet=item.get("content", ""),
-                score=item.get("score", 0.0),
-            ))
+            results.append(
+                SearchResult(
+                    title=item.get("title", ""),
+                    url=url,
+                    snippet=item.get("content", ""),
+                    score=item.get("score", 0.0),
+                )
+            )
 
         return results

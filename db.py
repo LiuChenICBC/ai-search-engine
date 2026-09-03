@@ -22,7 +22,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "www_search.db")
 def estimate_tokens(text: str) -> int:
     """估算文本的 token 数（按 1 token ≈ 4 字符粗略估算）"""
     # 中文字符每个约 1.5 token，英文每 3-4 字符 1 token
-    chinese_chars = len(re.findall(r'[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]', text))
+    chinese_chars = len(re.findall(r"[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]", text))
     other_chars = len(text) - chinese_chars
     return int(chinese_chars * 1.5 + other_chars / 3.5 + 0.5)
 
@@ -191,7 +191,9 @@ def toggle_user(user_id: int) -> dict:
             "UPDATE users SET enabled = ? WHERE id = ?",
             (new_enabled, user_id),
         )
-        return dict(conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone())
+        return dict(
+            conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        )
 
 
 def regenerate_key(user_id: int) -> dict:
@@ -236,9 +238,13 @@ def get_global_stats() -> dict:
     """获取全局统计"""
     with get_db() as conn:
         total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        enabled_users = conn.execute("SELECT COUNT(*) FROM users WHERE enabled = 1").fetchone()[0]
+        enabled_users = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE enabled = 1"
+        ).fetchone()[0]
         total_records = conn.execute("SELECT COUNT(*) FROM usage_records").fetchone()[0]
-        total_tokens = conn.execute("SELECT COALESCE(SUM(total_tokens), 0) FROM users").fetchone()[0]
+        total_tokens = conn.execute(
+            "SELECT COALESCE(SUM(total_tokens), 0) FROM users"
+        ).fetchone()[0]
 
         # 最近 7 天使用趋势
         daily_usage = conn.execute(

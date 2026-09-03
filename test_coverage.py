@@ -5,12 +5,14 @@ P1: fetcher/web.py, main.py, search/__init__.py, db.py, cli.py
 
 import sys
 import os
+
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_coverage_pw")
 os.environ.setdefault("WWW_SEARCH_SECRET_KEY", "test_coverage_key_32chars_long_abcdef")
 sys.path.insert(0, os.path.dirname(__file__))
 
 # 确保 admin 配置在导入 main 之前初始化
 from middleware import init_admin_config as _init_admin_config
+
 _init_admin_config()
 del _init_admin_config
 
@@ -24,12 +26,16 @@ PASS = 0
 FAIL = 0
 BASE_DIR = os.path.dirname(__file__)
 
+
 def ok(msg):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg, detail=""):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}: {detail}")
 
 
@@ -49,7 +55,9 @@ def test_llm_extract_content():
 
     # content 为空，有 reasoning_content
     msg2 = {"content": "", "reasoning_content": "Chain of thought"}
-    assert client._extract_content(msg2) == "Chain of thought", "应回退到 reasoning_content"
+    assert client._extract_content(msg2) == "Chain of thought", (
+        "应回退到 reasoning_content"
+    )
     ok("_extract_content 回退 reasoning_content")
 
     # 两者都空
@@ -67,16 +75,21 @@ def test_llm_chat_stream_generator():
     # Mock session.post 返回 SSE 流
     class MockResp:
         status_code = 200
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
+
         def iter_lines(self, *args, **kwargs):
             # 模拟 OpenAI SSE 格式
-            yield b"data: {\"choices\":[{\"delta\":{\"content\":\"Hello\"}}]}"
-            yield b"data: {\"choices\":[{\"delta\":{\"content\":\" world\"}}]}"
-            yield b"data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"thinking\"}}]}"
+            yield b'data: {"choices":[{"delta":{"content":"Hello"}}]}'
+            yield b'data: {"choices":[{"delta":{"content":" world"}}]}'
+            yield b'data: {"choices":[{"delta":{"reasoning_content":"thinking"}}]}'
             yield b"data: [DONE]"
             yield b""
-            yield b"data: {\"choices\":[{\"delta\":{\"content\":\"!\"}}]}"
-        def close(self): pass  # chat_stream 的 finally 块会调用
+            yield b'data: {"choices":[{"delta":{"content":"!"}}]}'
+
+        def close(self):
+            pass  # chat_stream 的 finally 块会调用
 
     client.session.post = MagicMock(side_effect=lambda *a, **k: MockResp())
 
@@ -92,12 +105,17 @@ def test_llm_chat_stream_generator():
     # 测试 JSON 解析错误被跳过
     class MockResp2:
         status_code = 200
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
+
         def iter_lines(self, *args, **kwargs):
             yield b"data: not-json"
-            yield b"data: {\"choices\":[{\"delta\":{\"content\":\"ok\"}}]}"
+            yield b'data: {"choices":[{"delta":{"content":"ok"}}]}'
             yield b"data: [DONE]"
-        def close(self): pass
+
+        def close(self):
+            pass
 
     client.session.post = MagicMock(side_effect=lambda *a, **k: MockResp2())
 
@@ -116,15 +134,21 @@ def test_llm_classify_json_parsing():
     # Mock 返回带 JSON 的文本
     class MockResp:
         status_code = 200
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
+
         def json(self):
             return {
-                "choices": [{
-                    "message": {
-                        "content": '{"needs_research": true, "query_rewrite": "test", "sources": ["web"], "reason": "test"}'
+                "choices": [
+                    {
+                        "message": {
+                            "content": '{"needs_research": true, "query_rewrite": "test", "sources": ["web"], "reason": "test"}'
+                        }
                     }
-                }]
+                ]
             }
+
     client.session.post = MagicMock(return_value=MockResp())
 
     result = client.classify("test query")
@@ -135,15 +159,21 @@ def test_llm_classify_json_parsing():
     # 测试 JSON 解析失败 + 正则回退
     class MockResp2:
         status_code = 200
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
+
         def json(self):
             return {
-                "choices": [{
-                    "message": {
-                        "content": "some text before {\"needs_research\":false} and after"
+                "choices": [
+                    {
+                        "message": {
+                            "content": 'some text before {"needs_research":false} and after'
+                        }
                     }
-                }]
+                ]
             }
+
     client.session.post = MagicMock(return_value=MockResp2())
 
     result2 = client.classify("x")
@@ -153,13 +183,13 @@ def test_llm_classify_json_parsing():
     # 测试完全无法解析时返回默认值
     class MockResp3:
         status_code = 200
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
+
         def json(self):
-            return {
-                "choices": [{
-                    "message": {"content": "completely broken response"}
-                }]
-            }
+            return {"choices": [{"message": {"content": "completely broken response"}}]}
+
     client.session.post = MagicMock(return_value=MockResp3())
 
     result3 = client.classify("x")
@@ -178,12 +208,26 @@ def test_research_build_context_and_prompt():
 
     # Mock 搜索结果
     results = [
-        SearchResult(title="Result 1", url="http://example.com/1", snippet="snippet 1", score=1.0),
-        SearchResult(title="Result 2", url="http://example.com/2", snippet="snippet 2", score=0.5),
+        SearchResult(
+            title="Result 1", url="http://example.com/1", snippet="snippet 1", score=1.0
+        ),
+        SearchResult(
+            title="Result 2", url="http://example.com/2", snippet="snippet 2", score=0.5
+        ),
     ]
     scraped = [
-        ExtractedContent(url="http://example.com/1", title="Page 1", content="This is page 1 content", html=""),
-        ExtractedContent(url="http://example.com/2", title="Page 2", content="This is page 2 content", html=""),
+        ExtractedContent(
+            url="http://example.com/1",
+            title="Page 1",
+            content="This is page 1 content",
+            html="",
+        ),
+        ExtractedContent(
+            url="http://example.com/2",
+            title="Page 2",
+            content="This is page 2 content",
+            html="",
+        ),
     ]
 
     messages = agent._build_context_and_prompt("test query", results, scraped)
@@ -269,13 +313,17 @@ def test_fetcher_html_parsing_article():
     class MockResp:
         status_code = 200
         text = mock_html
-        def raise_for_status(self): pass
+
+        def raise_for_status(self):
+            pass
 
     orig_session = _session.get
     orig_requests = req_module.Session.get
     try:
+
         def mock_get(url, **kw):
             return MockResp()
+
         _session.get = mock_get
         req_module.Session.get = mock_get
 
@@ -300,12 +348,17 @@ def test_fetcher_html_parsing_body_fallback():
     # 临时替换 _session.get
     original = _session.get
     try:
+
         def mock_get(url, **kw):
             class Resp:
                 status_code = 200
                 text = mock_html
-                def raise_for_status(self): pass
+
+                def raise_for_status(self):
+                    pass
+
             return Resp()
+
         _session.get = mock_get
 
         with patch("fetcher.web.validate_url", return_value=True):
@@ -329,19 +382,26 @@ def test_fetcher_max_length_truncation():
 
     original = _session.get
     try:
+
         def mock_get(url, **kw):
             class Resp:
                 status_code = 200
                 text = mock_html
-                def raise_for_status(self): pass
+
+                def raise_for_status(self):
+                    pass
+
             return Resp()
+
         _session.get = mock_get
 
         with patch("fetcher.web.validate_url", return_value=True):
             result = extract_url("http://test-truncate.com", timeout=5, max_length=50)
         assert result is not None
         trunc_msg = "\n\n... (内容截断)"
-        assert len(result.content) <= 50 + len(trunc_msg), f"内容长度 {len(result.content)} > 预期上限 {50 + len(trunc_msg)}"
+        assert len(result.content) <= 50 + len(trunc_msg), (
+            f"内容长度 {len(result.content)} > 预期上限 {50 + len(trunc_msg)}"
+        )
         assert "..." in result.content
         ok("extract_url max_length 截断生效")
     finally:
@@ -356,12 +416,17 @@ def test_fetcher_html_parsing_fallback_chain():
 
     original = _session.get
     try:
+
         def mock_get(url, **kw):
             class Resp:
                 status_code = 200
                 text = mock_html
-                def raise_for_status(self): pass
+
+                def raise_for_status(self):
+                    pass
+
             return Resp()
+
         _session.get = mock_get
 
         with patch("fetcher.web.validate_url", return_value=True):
@@ -379,7 +444,11 @@ def test_fetcher_extract_multiple_parallel():
     from unittest.mock import patch
 
     # Mock extract_url 返回固定结果
-    mock = MagicMock(side_effect=lambda *a, **kw: ExtractedContent(url=a[0], title=f"Title {a[0]}", content="content", html=""))
+    mock = MagicMock(
+        side_effect=lambda *a, **kw: ExtractedContent(
+            url=a[0], title=f"Title {a[0]}", content="content", html=""
+        )
+    )
     with patch("fetcher.web.extract_url", mock):
         urls = ["http://a.com", "http://b.com", "http://c.com"]
         results = extract_multiple(urls, timeout=5)
@@ -402,17 +471,25 @@ def test_admin_user_create():
     client = TestClient(app)
 
     # 先登录，获取 CSRF cookie
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
 
     # 创建用户（CSRF token 从 cookie 获取）
-    resp = client.post("/admin/users/create",
-    data={"username": "cov-test-user", "csrf_token": "dummy"}, follow_redirects=False)
+    resp = client.post(
+        "/admin/users/create",
+        data={"username": "cov-test-user", "csrf_token": "dummy"},
+        follow_redirects=False,
+    )
     assert resp.status_code in (200, 302, 303), f"创建用户返回 {resp.status_code}"
     ok("创建用户路由可访问")
 
     # 空用户名
-    resp2 = client.post("/admin/users/create",
-    data={"username": "", "csrf_token": "dummy"}, follow_redirects=False)
+    resp2 = client.post(
+        "/admin/users/create",
+        data={"username": "", "csrf_token": "dummy"},
+        follow_redirects=False,
+    )
     assert resp2.status_code in (200, 302, 303)
     ok("空用户名被正确处理")
 
@@ -423,13 +500,18 @@ def test_admin_user_toggle():
     from fastapi.testclient import TestClient
     from db import create_user
 
-    user = create_user(f"cov-toggle-{int(time.time()*1000)}")
+    user = create_user(f"cov-toggle-{int(time.time() * 1000)}")
 
     client = TestClient(app)
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
 
-    resp = client.post(f"/admin/users/{user['id']}/toggle",
-    data={"csrf_token": "dummy"}, follow_redirects=False)
+    resp = client.post(
+        f"/admin/users/{user['id']}/toggle",
+        data={"csrf_token": "dummy"},
+        follow_redirects=False,
+    )
     assert resp.status_code in (200, 302, 303)
     ok("用户启用/禁用路由正常")
 
@@ -440,18 +522,26 @@ def test_admin_user_regenerate():
     from fastapi.testclient import TestClient
     from db import create_user
 
-    user = create_user(f"cov-regen-{int(time.time()*1000)}")
+    user = create_user(f"cov-regen-{int(time.time() * 1000)}")
 
     client = TestClient(app)
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
 
-    resp = client.post(f"/admin/users/{user['id']}/regenerate",
-    data={"csrf_token": "dummy"}, follow_redirects=False)
+    resp = client.post(
+        f"/admin/users/{user['id']}/regenerate",
+        data={"csrf_token": "dummy"},
+        follow_redirects=False,
+    )
     assert resp.status_code in (200, 302, 303)
     ok("重新生成 Key 路由正常")
 
-    resp2 = client.post("/admin/users/99999/regenerate",
-    data={"csrf_token": "dummy"}, follow_redirects=False)
+    resp2 = client.post(
+        "/admin/users/99999/regenerate",
+        data={"csrf_token": "dummy"},
+        follow_redirects=False,
+    )
     assert resp2.status_code in (200, 302, 303)
     ok("不存在用户正确处理")
 
@@ -462,10 +552,12 @@ def test_admin_user_usage():
     from fastapi.testclient import TestClient
     from db import create_user
 
-    user = create_user(f"cov-usage-{int(time.time()*1000)}")
+    user = create_user(f"cov-usage-{int(time.time() * 1000)}")
 
     client = TestClient(app)
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
 
     resp = client.get(f"/admin/users/{user['id']}/usage", follow_redirects=True)
     assert resp.status_code in (200, 302)
@@ -483,7 +575,9 @@ def test_admin_api_endpoints():
     from fastapi.testclient import TestClient
 
     client = TestClient(app)
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
 
     resp = client.get("/admin/api/users")
     assert resp.status_code == 200
@@ -500,7 +594,9 @@ def test_admin_logout():
     from fastapi.testclient import TestClient
 
     client = TestClient(app)
-    client.post("/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False)
+    client.post(
+        "/admin/login", data={"password": "test_coverage_pw"}, follow_redirects=False
+    )
     resp = client.get("/admin/logout", follow_redirects=True)
     assert resp.status_code in (200, 302)
     ok("登出路由正常")
@@ -534,6 +630,7 @@ def test_search_load_engines_empty():
     # 临时创建空 config
     import tempfile
     import yaml
+
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
     yaml.dump({"search": {"use_ddgs": True}}, tmp)
     tmp_path = tmp.name
@@ -551,6 +648,7 @@ def test_search_load_engines_with_searxng():
     from search import load_search_engines
     from unittest.mock import patch
     import tempfile, yaml
+
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
     yaml.dump({"search": {"searxng_url": "http://searxng:8888", "use_ddgs": True}}, tmp)
     tmp_path = tmp.name
@@ -575,17 +673,27 @@ def test_search_all_result_dedup():
     # Mock load_search_engines 返回两个模拟引擎
     class MockEngine1:
         name = "mock1"
+
         def search(self, query, max_results):
-            return [SearchResult(title="A", url="http://same-url", snippet="s1", score=1.0),
-                    SearchResult(title="B", url="http://unique-1", snippet="s2", score=0.5)]
+            return [
+                SearchResult(title="A", url="http://same-url", snippet="s1", score=1.0),
+                SearchResult(title="B", url="http://unique-1", snippet="s2", score=0.5),
+            ]
 
     class MockEngine2:
         name = "mock2"
-        def search(self, query, max_results):
-            return [SearchResult(title="A (dup)", url="http://same-url", snippet="s3", score=0.8),
-                    SearchResult(title="C", url="http://unique-2", snippet="s4", score=0.6)]
 
-    with patch("search.load_search_engines", return_value=[MockEngine1(), MockEngine2()]):
+        def search(self, query, max_results):
+            return [
+                SearchResult(
+                    title="A (dup)", url="http://same-url", snippet="s3", score=0.8
+                ),
+                SearchResult(title="C", url="http://unique-2", snippet="s4", score=0.6),
+            ]
+
+    with patch(
+        "search.load_search_engines", return_value=[MockEngine1(), MockEngine2()]
+    ):
         results = search_all("test", max_results=5)
         # 3 个唯一 URL，但去重后应为 3 个
         assert len(results) == 3, f"去重后应有 3 个结果, 实际 {len(results)}"
@@ -601,6 +709,7 @@ def test_search_all_timeout():
     # 模拟引擎返回空结果（模拟超时后的空响应）
     class FastEmptyEngine:
         name = "fast-empty"
+
         def search(self, query, max_results):
             return []
 
@@ -617,9 +726,10 @@ def test_search_all_timeout():
 def test_db_empty_username():
     """验证创建用户时空用户名 — create_user 本身不验证空值，由上层验证"""
     from db import create_user
+
     # create_user 不验证空值，但 SQLite UNIQUE 约束不允许重复空字符串
     # 使用唯一非空用户名验证创建逻辑正常
-    user = create_user(f"empty-test-{int(time.time()*1000)}")
+    user = create_user(f"empty-test-{int(time.time() * 1000)}")
     assert user["username"].startswith("empty-test")
     assert "api_key" in user
     ok("创建用户逻辑正常")
@@ -629,7 +739,7 @@ def test_db_record_usage_empty():
     """验证空参数记录使用量"""
     from db import create_user, record_usage, get_usage_stats
 
-    user = create_user(f"cov-empty-{int(time.time()*1000)}")
+    user = create_user(f"cov-empty-{int(time.time() * 1000)}")
     # 空 query
     record_usage(user["id"], query="", tokens_used=0)
     stats = get_usage_stats(user["id"])
@@ -640,6 +750,7 @@ def test_db_record_usage_empty():
 def test_db_verify_invalid_key():
     """验证无效 API Key 返回 None"""
     from db import verify_api_key
+
     result = verify_api_key("nonexistent_key")
     assert result is None
     ok("无效 API Key 返回 None")
@@ -700,8 +811,11 @@ def test_base_search_engine_interface():
 
     class TestEngine(BaseSearchEngine):
         @property
-        def name(self): return "test"
-        def search(self, q, max_results): return []
+        def name(self):
+            return "test"
+
+        def search(self, q, max_results):
+            return []
 
     engine = TestEngine()
     assert engine.name == "test"
@@ -794,6 +908,7 @@ def run():
         except Exception as e:
             fail(name, f"{type(e).__name__}: {e}")
             import traceback
+
             traceback.print_exc()
 
     print(f"\n覆盖率测试结果: {PASS} 通过, {FAIL} 失败 / {PASS + FAIL} 总")
