@@ -9,32 +9,31 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from db import (
-    create_user,
-    get_all_users,
-    toggle_user,
-    regenerate_key,
-    get_usage_stats,
-    get_global_stats,
-    get_user,
-)
-from middleware import (
-    login_required,
-    get_admin_session,
-    generate_csrf_token,
-    _check_login_rate,
-    _login_lock,
-    _login_attempts,
-    get_db_executor,
-)
-
 # 通过模块引用动态配置值，避免导入时拿到 None 的快照
 import middleware as _middleware
 from config.constants import (
-    MAX_USERNAME_LENGTH,
     MAX_USAGE_LIMIT,
-    SESSION_COOKIE_MAX_AGE,
+    MAX_USERNAME_LENGTH,
     SECURE_COOKIES,
+    SESSION_COOKIE_MAX_AGE,
+)
+from db import (
+    create_user,
+    get_all_users,
+    get_global_stats,
+    get_usage_stats,
+    get_user,
+    regenerate_key,
+    toggle_user,
+)
+from middleware import (
+    _check_login_rate,
+    _login_attempts,
+    _login_lock,
+    generate_csrf_token,
+    get_admin_session,
+    get_db_executor,
+    login_required,
 )
 
 logger = logging.getLogger("www_search.routes.admin")
@@ -87,7 +86,7 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
         if _check_login_rate(client_ip):
             logger.warning(f"登录尝试过多被限制: {client_ip}")
             return RedirectResponse(
-                url=f"/admin/login?flash=error:登录尝试过多，请 5 分钟后再试",
+                url="/admin/login?flash=error:登录尝试过多，请 5 分钟后再试",
                 status_code=303,
             )
 

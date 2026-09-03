@@ -3,8 +3,8 @@ P0: llm/client.py, agent/research.py
 P1: fetcher/web.py, main.py, search/__init__.py, db.py, cli.py
 """
 
-import sys
 import os
+import sys
 
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_coverage_pw")
 os.environ.setdefault("WWW_SEARCH_SECRET_KEY", "test_coverage_key_32chars_long_abcdef")
@@ -16,11 +16,9 @@ from middleware import init_admin_config as _init_admin_config
 _init_admin_config()
 del _init_admin_config
 
-import json
 import time
-import threading
 from pathlib import Path
-from unittest.mock import patch, MagicMock, PropertyMock
+from unittest.mock import MagicMock, patch
 
 PASS = 0
 FAIL = 0
@@ -126,8 +124,8 @@ def test_llm_chat_stream_generator():
 
 def test_llm_classify_json_parsing():
     """验证 classify 的 JSON 解析和回退"""
+
     from llm.client import LLMClient
-    import requests as req_module
 
     client = LLMClient(str(Path(BASE_DIR) / "config.yaml"))
 
@@ -202,7 +200,7 @@ def test_llm_classify_json_parsing():
 
 def test_research_build_context_and_prompt():
     """验证 _build_context_and_prompt 的 prompt 构建"""
-    from agent.research import ResearchAgent, SearchResult, ExtractedContent
+    from agent.research import ExtractedContent, ResearchAgent, SearchResult
 
     agent = ResearchAgent(str(Path(BASE_DIR) / "config.yaml"))
 
@@ -243,7 +241,7 @@ def test_research_build_context_and_prompt():
 
 def test_research_build_sources():
     """验证 _build_sources 构建来源列表"""
-    from agent.research import ResearchAgent, SearchResult, ExtractedContent
+    from agent.research import ExtractedContent, ResearchAgent, SearchResult
 
     agent = ResearchAgent(str(Path(BASE_DIR) / "config.yaml"))
 
@@ -266,8 +264,8 @@ def test_research_build_sources():
 
 def test_research_synthesize_with_mock():
     """验证 _synthesize 调用 LLM（mock）"""
-    from agent.research import ResearchAgent, SearchResult, ExtractedContent
-    from unittest.mock import patch
+
+    from agent.research import ExtractedContent, ResearchAgent, SearchResult
 
     agent = ResearchAgent(str(Path(BASE_DIR) / "config.yaml"))
 
@@ -304,8 +302,9 @@ def test_research_result_dataclass():
 
 def test_fetcher_html_parsing_article():
     """验证 HTML 解析 — article 标签提取"""
-    from fetcher.web import extract_url, _session
     import requests as req_module
+
+    from fetcher.web import _session, extract_url
 
     mock_html = """<html><head><title>Test Page</title></head>
     <body><article><p>Article content paragraph</p></article></body></html>"""
@@ -340,7 +339,7 @@ def test_fetcher_html_parsing_article():
 
 def test_fetcher_html_parsing_body_fallback():
     """验证 HTML 解析 — body 回退策略"""
-    from fetcher.web import extract_url, _session
+    from fetcher.web import _session, extract_url
 
     mock_html = """<html><head><title></title></head>
     <body><p>Short</p><p>This is a sufficiently long paragraph for testing</p></body></html>"""
@@ -374,7 +373,7 @@ def test_fetcher_html_parsing_body_fallback():
 
 def test_fetcher_max_length_truncation():
     """验证内容截断"""
-    from fetcher.web import extract_url, _session
+    from fetcher.web import _session, extract_url
 
     long_content = "A" * 100 + "\n" + "B" * 100  # > 200 chars
     mock_html = f"""<html><head><title>Truncation Test</title></head>
@@ -410,7 +409,7 @@ def test_fetcher_max_length_truncation():
 
 def test_fetcher_html_parsing_fallback_chain():
     """验证 BeautifulSoup 解析器回退链"""
-    from fetcher.web import extract_url, _session
+    from fetcher.web import _session, extract_url
 
     mock_html = """<html><head><title>Fallback</title></head><body><p>Content</p></body></html>"""
 
@@ -440,8 +439,9 @@ def test_fetcher_html_parsing_fallback_chain():
 
 def test_fetcher_extract_multiple_parallel():
     """验证 extract_multiple 并行执行"""
-    from fetcher.web import extract_multiple, extract_url, ExtractedContent
     from unittest.mock import patch
+
+    from fetcher.web import ExtractedContent, extract_multiple
 
     # Mock extract_url 返回固定结果
     mock = MagicMock(
@@ -455,8 +455,8 @@ def test_fetcher_extract_multiple_parallel():
         assert len(results) == 3, f"应返回 3 个结果, 实际 {len(results)}"
         urls_found = [r.url for r in results]
         assert "http://a.com" in urls_found, f"缺少 http://a.com, 实际 {urls_found}"
-        assert "http://b.com" in urls_found, f"缺少 http://b.com"
-        assert "http://c.com" in urls_found, f"缺少 http://c.com"
+        assert "http://b.com" in urls_found, "缺少 http://b.com"
+        assert "http://c.com" in urls_found, "缺少 http://c.com"
         ok("extract_multiple 并行执行正常")
 
 
@@ -465,8 +465,9 @@ def test_fetcher_extract_multiple_parallel():
 
 def test_admin_user_create():
     """验证管理后台创建用户路由"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
 
@@ -496,9 +497,10 @@ def test_admin_user_create():
 
 def test_admin_user_toggle():
     """验证启用/禁用用户"""
-    from main import app
     from fastapi.testclient import TestClient
+
     from db import create_user
+    from main import app
 
     user = create_user(f"cov-toggle-{int(time.time() * 1000)}")
 
@@ -518,9 +520,10 @@ def test_admin_user_toggle():
 
 def test_admin_user_regenerate():
     """验证重新生成 Key"""
-    from main import app
     from fastapi.testclient import TestClient
+
     from db import create_user
+    from main import app
 
     user = create_user(f"cov-regen-{int(time.time() * 1000)}")
 
@@ -548,9 +551,10 @@ def test_admin_user_regenerate():
 
 def test_admin_user_usage():
     """验证使用记录页面"""
-    from main import app
     from fastapi.testclient import TestClient
+
     from db import create_user
+    from main import app
 
     user = create_user(f"cov-usage-{int(time.time() * 1000)}")
 
@@ -571,8 +575,9 @@ def test_admin_user_usage():
 
 def test_admin_api_endpoints():
     """验证管理后台 API 端点"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
     client.post(
@@ -590,8 +595,9 @@ def test_admin_api_endpoints():
 
 def test_admin_logout():
     """验证登出"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
     client.post(
@@ -624,12 +630,13 @@ def test_admin_csrf_generate_validate():
 
 def test_search_load_engines_empty():
     """验证空配置时加载引擎"""
-    from search import load_search_engines
-    from search.base import BaseSearchEngine
-
     # 临时创建空 config
     import tempfile
+
     import yaml
+
+    from search import load_search_engines
+    from search.base import BaseSearchEngine
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
     yaml.dump({"search": {"use_ddgs": True}}, tmp)
@@ -645,9 +652,12 @@ def test_search_load_engines_empty():
 
 def test_search_load_engines_with_searxng():
     """验证配置 SearXNG URL 时加载"""
-    from search import load_search_engines
+    import tempfile
     from unittest.mock import patch
-    import tempfile, yaml
+
+    import yaml
+
+    from search import load_search_engines
 
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
     yaml.dump({"search": {"searxng_url": "http://searxng:8888", "use_ddgs": True}}, tmp)
@@ -666,9 +676,10 @@ def test_search_load_engines_with_searxng():
 
 def test_search_all_result_dedup():
     """验证 search_all 结果去重"""
+    from unittest.mock import patch
+
     from search import search_all
     from search.base import SearchResult
-    from unittest.mock import patch
 
     # Mock load_search_engines 返回两个模拟引擎
     class MockEngine1:
@@ -703,8 +714,9 @@ def test_search_all_result_dedup():
 
 def test_search_all_timeout():
     """验证 search_all 超时处理（mock 空结果引擎）"""
-    from search import search_all
     from unittest.mock import patch
+
+    from search import search_all
 
     # 模拟引擎返回空结果（模拟超时后的空响应）
     class FastEmptyEngine:
@@ -737,7 +749,7 @@ def test_db_empty_username():
 
 def test_db_record_usage_empty():
     """验证空参数记录使用量"""
-    from db import create_user, record_usage, get_usage_stats
+    from db import create_user, get_usage_stats, record_usage
 
     user = create_user(f"cov-empty-{int(time.time() * 1000)}")
     # 空 query
@@ -761,7 +773,6 @@ def test_db_verify_invalid_key():
 
 def test_cli_argparse():
     """验证 CLI 参数解析"""
-    from cli import main as cli_main
     import argparse
 
     # 测试 parser 定义
@@ -772,8 +783,9 @@ def test_cli_argparse():
 
 def test_cli_run_search_import():
     """验证 CLI run_search 可被调用（mock LLM）"""
-    from cli import run_search
     from unittest.mock import patch
+
+    from cli import run_search
 
     with patch("cli.ResearchAgent") as MockAgent:
         mock_agent = MockAgent.return_value
@@ -829,8 +841,8 @@ def test_base_search_engine_interface():
 
 def test_duckduckgo_search_class():
     """验证 DuckDuckGoSearch 类结构"""
-    from search.duckduckgo import DuckDuckGoSearch
     from search.base import BaseSearchEngine
+    from search.duckduckgo import DuckDuckGoSearch
 
     engine = DuckDuckGoSearch()
     assert isinstance(engine, BaseSearchEngine)
@@ -843,9 +855,10 @@ def test_duckduckgo_search_class():
 
 def test_searxng_search_class():
     """验证 SearXNGSearch 类结构和默认值"""
-    from search.searxng import SearXNGSearch
-    from search.base import BaseSearchEngine
     from unittest.mock import patch
+
+    from search.base import BaseSearchEngine
+    from search.searxng import SearXNGSearch
 
     # Mock validate_url 绕过 SSRF 校验
     with patch("search.searxng.validate_url", return_value=True):

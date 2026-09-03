@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """搜索 OCR 测试图片并测试 img2text.py"""
 
-import os
-import sys
 import json
-import requests
+import sys
 from pathlib import Path
 
 # 添加项目路径

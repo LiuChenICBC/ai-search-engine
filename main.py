@@ -13,30 +13,32 @@
 
 import logging
 import os
-import yaml
-from pathlib import Path
-from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
+from pathlib import Path
 
+import yaml
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.middleware import SlowAPIMiddleware
 from slowapi.errors import RateLimitExceeded
-from fastapi.middleware.cors import CORSMiddleware
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 from agent.research import ResearchAgent
 from middleware import (
-    APIKeyMiddleware,
     AdminCSRFMiddleware,
-    SecurityHeadersMiddleware,
+    APIKeyMiddleware,
     RequestSizeLimitMiddleware,
-    set_db_executor,
+    SecurityHeadersMiddleware,
     init_admin_config,
+    set_db_executor,
 )
+from routes.admin import create_admin_routes
+from routes.api import create_api_routes
 
 # 日志配置
 logging.basicConfig(
@@ -197,13 +199,9 @@ async def index(request: Request):
 # ==================== 注册路由 ====================
 
 # 注册 API 路由 — 使用 Depends 依赖注入获取 agent/config
-from routes.api import create_api_routes
-
 create_api_routes(app)
 
 # 注册 Admin 路由
-from routes.admin import create_admin_routes
-
 create_admin_routes(app, templates)
 
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """生成 OCR 测试图片：低分辨率、反光、模糊等退化场景"""
 
-from pathlib import Path
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import json
 import random
-import string
+from pathlib import Path
+
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 output_dir = Path(__file__).parent / "output" / "ocr_test_images"
 output_dir.mkdir(parents=True, exist_ok=True)
@@ -12,7 +13,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 # 使用系统字体
 try:
     font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", 40)
-except:
+except Exception:
     font = ImageFont.load_default()
 
 # 测试文本（中英文混合，有标准答案）
@@ -114,8 +115,6 @@ for text in test_texts:
         print(f"生成: {fname} ({desc})")
 
 # 保存标准答案
-import json
-
 with open(output_dir / "ground_truth.json", "w", encoding="utf-8") as f:
     json.dump(generated, f, ensure_ascii=False, indent=2)
 

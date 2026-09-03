@@ -1,22 +1,23 @@
 """Research Agent - 编排搜索、抓取、LLM 综合"""
 
 import logging
-import yaml
 from dataclasses import dataclass, field
 from typing import Generator
 
-from search import search_all
-from search.base import SearchResult
-from fetcher.web import extract_multiple, ExtractedContent
-from utils import validate_url
-from llm.client import LLMClient
+import yaml
+
 from config.constants import (
+    DEFAULT_FETCH_TIMEOUT,
     DEFAULT_MAX_RESULTS,
     DEFAULT_MAX_SCRAPE,
-    DEFAULT_FETCH_TIMEOUT,
     MAX_CONTENT_LENGTH,
     SOURCE_SNIPPET_LENGTH,
 )
+from fetcher.web import ExtractedContent, extract_multiple
+from llm.client import LLMClient
+from search import search_all
+from search.base import SearchResult
+from utils import validate_url
 
 logger = logging.getLogger("www_search.research")
 

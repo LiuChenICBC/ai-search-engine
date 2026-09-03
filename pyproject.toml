@@ -46,6 +46,9 @@ line-length = 88
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["E402", "E722"]
+
 [tool.pytest.ini_options]
 testpaths = ["."]
 python_files = ["test_*.py"]

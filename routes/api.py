@@ -9,10 +9,9 @@ import copy
 import json
 import logging
 
-from fastapi import Depends, FastAPI, Request, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from slowapi import Limiter
 
 from agent.research import ResearchAgent
 from db import estimate_tokens, record_usage
@@ -149,7 +148,7 @@ def create_api_routes(app: FastAPI):
         try:
             loop = asyncio.get_event_loop()
             executor = get_db_executor()
-            result = await loop.run_in_executor(
+            await loop.run_in_executor(
                 executor,
                 lambda: agent.llm.chat([{"role": "user", "content": "ok"}]),
             )

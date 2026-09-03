@@ -3,10 +3,11 @@
 import concurrent.futures
 import functools
 import ipaddress
+import logging
 import socket
 import time
-import logging
 from urllib.parse import urlparse
+
 from config.constants import DNS_RESOLVE_TIMEOUT
 
 

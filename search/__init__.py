@@ -1,14 +1,17 @@
 """搜索引擎工厂 - 自动选择可用的搜索后端"""
 
+import concurrent.futures
 import logging
 import os
+
 import yaml
-import concurrent.futures
+
+from config.constants import DEFAULT_MAX_RESULTS, SEARCH_PARALLEL_TIMEOUT
+from utils import normalize_url, retry_with_backoff
+
 from .base import BaseSearchEngine, SearchResult
-from .searxng import SearXNGSearch
 from .duckduckgo import DuckDuckGoSearch
-from utils import retry_with_backoff, normalize_url
-from config.constants import SEARCH_PARALLEL_TIMEOUT, DEFAULT_MAX_RESULTS
+from .searxng import SearXNGSearch
 
 logger = logging.getLogger("www_search.search")
 
@@ -94,7 +97,7 @@ def search_all(
             return_when=concurrent.futures.ALL_COMPLETED,
         )
         for f in not_done:
-            logger.warning(f"[search] 引擎搜索超时已取消")
+            logger.warning("[search] 引擎搜索超时已取消")
             f.cancel()
         for future in done:
             engine = ft_map[future]

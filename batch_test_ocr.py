@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """批量测试 img2text.py 对退化图片的识别效果"""
 
-import os
-import sys
 import json
 import subprocess
-import re
+import sys
+from collections import defaultdict
 from pathlib import Path
 
 IMG2TEXT = Path("/Users/liuchen/PycharmProjects/Pic2Word/img2text.py")
@@ -117,14 +116,12 @@ for case in cases:
 exact_count = sum(1 for r in results if r["exact_match"])
 partial_count = sum(1 for r in results if r["partial_match"])
 total = len(results)
-print(f"\n=== 统计 ===")
+print("\n=== 统计 ===")
 print(f"总计: {total}")
 print(f"精确匹配: {exact_count} ({exact_count / total * 100:.1f}%)")
 print(f"部分匹配: {partial_count} ({partial_count / total * 100:.1f}%)")
 
 # 按退化类型统计
-from collections import defaultdict
-
 by_degradation = defaultdict(lambda: {"total": 0, "exact": 0, "partial": 0})
 for r in results:
     d = r["degradation"]
@@ -142,4 +139,4 @@ for d, stats in sorted(by_degradation.items()):
 
 with open(TEST_DIR / "test_results.json", "w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
-print(f"\n详细结果已保存到 output/ocr_test_images/test_results.json")
+print("\n详细结果已保存到 output/ocr_test_images/test_results.json")

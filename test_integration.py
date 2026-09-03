@@ -1,7 +1,7 @@
 """集成测试：启动应用，测试实际 HTTP 端点、Flask 路由、CLI"""
 
-import sys
 import os
+import sys
 
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_admin_password")
 os.environ.setdefault("WWW_SEARCH_SECRET_KEY", "test_secret_key_32_chars_long_abcd1234")
@@ -13,13 +13,11 @@ from middleware import init_admin_config as _init_admin_config
 _init_admin_config()
 del _init_admin_config
 
-import json
-import time
-import subprocess
 import threading
-import requests
+import time
 from pathlib import Path
-from io import BytesIO
+
+import requests
 
 PASS = 0
 FAIL = 0
@@ -43,8 +41,9 @@ def fail(msg, detail=""):
 
 def test_fastapi_testclient():
     """使用 Starlette TestClient 测试 FastAPI 端点（跳过需 Agent 初始化的端点）"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
 
@@ -73,8 +72,9 @@ def test_fastapi_testclient():
 
 def test_admin_login():
     """使用 FastAPI TestClient 测试管理后台"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
 
@@ -106,8 +106,9 @@ def test_admin_login():
 
 def test_admin_csrf():
     """验证 CSRF 保护"""
-    from main import app
     from fastapi.testclient import TestClient
+
+    from main import app
 
     client = TestClient(app)
 
@@ -132,13 +133,12 @@ def test_db_full_cycle():
     """验证 DB 完整生命周期"""
     from db import (
         create_user,
-        verify_api_key,
-        get_all_users,
-        toggle_user,
-        regenerate_key,
-        record_usage,
-        get_usage_stats,
         get_global_stats,
+        get_usage_stats,
+        record_usage,
+        regenerate_key,
+        toggle_user,
+        verify_api_key,
     )
 
     username = f"int-full-{int(time.time() * 1000)}"
@@ -177,7 +177,7 @@ def test_db_full_cycle():
 
     # 禁用用户
     toggled = toggle_user(user1["id"])
-    assert toggled["enabled"] == False
+    assert not toggled["enabled"]
     disabled_verified = verify_api_key(user2["api_key"])
     assert disabled_verified is None
     ok("禁用用户后 Key 失效")
@@ -194,8 +194,9 @@ def test_db_full_cycle():
 
 def test_pydantic_input_validation():
     """验证 Pydantic 输入验证边界"""
-    from routes.api import ChatRequest
     from pydantic import ValidationError
+
+    from routes.api import ChatRequest
 
     # 空查询
     try:
@@ -234,7 +235,6 @@ def test_pydantic_input_validation():
 def test_concurrent_db_create_and_verify():
     """高并发创建+验证用户"""
     from db import create_user, verify_api_key
-    import threading
 
     n = 20
     users = [None] * n
@@ -264,8 +264,7 @@ def test_concurrent_db_create_and_verify():
 
 def test_concurrent_db_read_write():
     """读写并发测试"""
-    from db import create_user, record_usage, get_usage_stats, verify_api_key
-    import threading
+    from db import create_user, get_usage_stats, record_usage
 
     user = create_user(f"rw-{int(time.time() * 1000)}")
     errors = [0]
@@ -303,8 +302,6 @@ def test_concurrent_db_read_write():
 def test_cli_import():
     """验证 CLI 导入不报错"""
     try:
-        from cli import run_search, main
-
         ok("CLI 模块导入正常")
     except Exception as e:
         fail("CLI 导入失败", str(e))
@@ -313,8 +310,6 @@ def test_cli_import():
 def test_web_search_import():
     """验证 web_search.py 导入"""
     try:
-        from web_search import search, main
-
         ok("web_search.py 导入正常")
     except Exception as e:
         fail("web_search.py 导入失败", str(e))
@@ -328,7 +323,7 @@ def test_fetcher_timeout():
     from fetcher.web import extract_url
 
     # 超短超时
-    result = extract_url("http://example.com", timeout=0.01)
+    extract_url("http://example.com", timeout=0.01)
     # 可能超时返回 None，但不应该崩溃
     ok("超短超时 fetcher 不崩溃")
 
@@ -336,7 +331,6 @@ def test_fetcher_timeout():
 def test_llm_retry_exhausted():
     """验证 LLM 重试耗尽后的行为"""
     from llm.client import LLMClient
-    from pathlib import Path
 
     config_path = str(Path(BASE_DIR) / "config.yaml")
     client = LLMClient(config_path)
@@ -344,7 +338,7 @@ def test_llm_retry_exhausted():
     client.api_key = "test"
 
     try:
-        result = client.chat([{"role": "user", "content": "hello"}])
+        client.chat([{"role": "user", "content": "hello"}])
         fail("应抛出异常")
     except requests.exceptions.ConnectionError:
         ok("连接拒绝时正确抛出 ConnectionError")
@@ -357,9 +351,7 @@ def test_llm_retry_exhausted():
 
 def test_config_env_override():
     """验证环境变量覆盖配置"""
-    import yaml
     from llm.client import LLMClient
-    from pathlib import Path
 
     # 模拟设置环境变量
     old_val = os.environ.get("WWW_SEARCH_LLM_API_KEY")

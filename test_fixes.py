@@ -2,8 +2,8 @@
 审计修复验证测试 — 覆盖所有 Critical + Medium 问题
 """
 
-import sys
 import os
+import sys
 
 # 设置测试环境变量
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_password")
@@ -16,11 +16,11 @@ def test_fetcher_url_validation():
     """验证 URL 协议验证"""
     from utils import validate_url
 
-    assert validate_url("http://example.com") == True
-    assert validate_url("https://example.com") == True
-    assert validate_url("file:///etc/passwd") == False
-    assert validate_url("gopher://example.com") == False
-    assert validate_url("javascript:alert(1)") == False
+    assert validate_url("http://example.com")
+    assert validate_url("https://example.com")
+    assert not validate_url("file:///etc/passwd")
+    assert not validate_url("gopher://example.com")
+    assert not validate_url("javascript:alert(1)")
     print("  ✅ URL 协议验证")
 
 
@@ -45,8 +45,9 @@ def test_searxng_session_pool():
 
 def test_llm_session_pool():
     """验证 LLMClient 使用了 Session 连接池"""
-    from llm.client import LLMClient
     from pathlib import Path
+
+    from llm.client import LLMClient
 
     config_path = str(Path(__file__).parent / "config.yaml")
     client = LLMClient(config_path)
@@ -65,8 +66,8 @@ def test_llm_retry_decorator():
 
 def test_fetcher_retry_decorator():
     """验证 fetcher 使用了重试装饰器"""
-    from utils import retry_with_backoff
     from fetcher.web import _fetch_url
+    from utils import retry_with_backoff
 
     assert retry_with_backoff is not None
     assert _fetch_url is not None
@@ -75,8 +76,8 @@ def test_fetcher_retry_decorator():
 
 def test_searxng_retry_decorator():
     """验证 SearXNG 使用了重试装饰器"""
-    from utils import retry_with_backoff
     from search.searxng import SearXNGSearch
+    from utils import retry_with_backoff
 
     assert retry_with_backoff is not None
     import inspect
@@ -104,8 +105,9 @@ def test_search_retry_decorator():
 
 def test_input_validation():
     """验证 Pydantic 输入验证"""
-    from routes.api import ChatRequest
     from pydantic import ValidationError
+
+    from routes.api import ChatRequest
 
     # 空查询应该被拒绝
     try:
@@ -135,7 +137,6 @@ def test_logging_configured():
     assert "logging.basicConfig" in content, "main.py 应包含 logging.basicConfig"
     assert "level=logging.INFO" in content, "日志级别应设置为 INFO"
     # 验证 logger 对象存在且可工作
-    from main import app
 
     logger = logging.getLogger("www_search")
     assert logger is not None
@@ -162,6 +163,7 @@ def test_security_headers_configured():
 def test_graceful_shutdown():
     """验证优雅关闭通过 lifespan 管理（不再使用手动信号处理器）"""
     import inspect
+
     from main import lifespan
 
     # 验证 lifespan 上下文管理器存在且包含清理逻辑
@@ -187,14 +189,13 @@ def test_csrf_protection():
     token1 = generate_csrf_token()
     token2 = generate_csrf_token()
     assert token1 != token2, "每次生成的 token 应不同"
-    assert validate_csrf_token(token1, token1) == True
-    assert validate_csrf_token(token1, token2) == False
+    assert validate_csrf_token(token1, token1)
+    assert not validate_csrf_token(token1, token2)
     print("  ✅ CSRF 保护")
 
 
 def test_db_parameterized():
     """验证数据库使用参数化查询"""
-    from db import get_db
 
     print("  ✅ 数据库参数化查询")
 
@@ -275,8 +276,9 @@ def test_admin_debug_disabled():
 
 def test_search_timeout_configured():
     """验证 search_all 有超时配置"""
-    from search import search_all
     import inspect
+
+    from search import search_all
 
     src = inspect.getsource(search_all)
     assert "SEARCH_PARALLEL_TIMEOUT" in src, "search_all 应包含超时配置"
@@ -286,8 +288,9 @@ def test_search_timeout_configured():
 
 def test_fetch_timeout_configured():
     """验证 extract_multiple 有超时配置"""
-    from fetcher.web import extract_multiple
     import inspect
+
+    from fetcher.web import extract_multiple
 
     src = inspect.getsource(extract_multiple)
     assert "FETCH_PARALLEL_TIMEOUT" in src, "extract_multiple 应包含超时配置"
@@ -401,8 +404,9 @@ def test_sec_m03_csrf_secure_cookie():
 
 def test_rel_m05_db_init_lock():
     """REL-M05: 验证 ensure_db 使用线程锁"""
-    from db import ensure_db, _db_lock
     import inspect
+
+    from db import ensure_db
 
     src = inspect.getsource(ensure_db)
     assert "_db_lock" in src, "ensure_db 应使用 _db_lock"
@@ -413,6 +417,7 @@ def test_rel_m05_db_init_lock():
 def test_rel_m06_chat_async():
     """REL-M06: 验证 chat 端点是 async 且使用 executor（通过源码检查）"""
     import inspect
+
     from routes.api import create_api_routes
 
     src = inspect.getsource(create_api_routes)
@@ -423,8 +428,9 @@ def test_rel_m06_chat_async():
 
 def test_rel_m07_usage_fire_and_forget():
     """REL-M07: 验证中间件使用 fire-and-forget 记录使用量"""
-    from middleware import _record_usage_async
     import inspect
+
+    from middleware import _record_usage_async
 
     assert inspect.iscoroutinefunction(_record_usage_async), (
         "_record_usage_async 应为 async"
@@ -440,6 +446,7 @@ def test_rel_m07_usage_fire_and_forget():
 def test_cor_m08_no_double_usage():
     """COR-M08: 验证 chat 端点不再重复调用 record_usage（通过源码检查）"""
     import inspect
+
     from routes.api import create_api_routes
 
     src = inspect.getsource(create_api_routes)
@@ -462,8 +469,9 @@ def test_cor_m08_no_double_usage():
 
 def test_cor_m09_regenerate_key_atomic():
     """COR-M09: 验证 regenerate_key 在同一事务内读写"""
-    from db import regenerate_key
     import inspect
+
+    from db import regenerate_key
 
     src = inspect.getsource(regenerate_key)
     # 确认没有调用 get_user()（旧实现的问题）
@@ -489,6 +497,7 @@ def test_rel_m10_login_attempts_bounded():
 def test_cor_m11_toggle_flash_error():
     """COR-M11: 验证 toggle 失败时返回 flash 错误（通过源码检查）"""
     import inspect
+
     from routes.admin import create_admin_routes
 
     src = inspect.getsource(create_admin_routes)
@@ -498,8 +507,9 @@ def test_cor_m11_toggle_flash_error():
 
 def test_lifespan_error_handling():
     """C-M05: 验证 lifespan 正确处理 config.yaml 和 agent 初始化异常"""
-    from main import lifespan
     import inspect
+
+    from main import lifespan
 
     src = inspect.getsource(lifespan)
     assert "yaml.YAMLError" in src, "lifespan 应处理 YAML 解析错误"
@@ -544,8 +554,9 @@ def test_request_size_limit():
 
 def test_hsts_header():
     """SEC-C07: 验证 HSTS 安全头已配置"""
-    from middleware import SecurityHeadersMiddleware
     import inspect
+
+    from middleware import SecurityHeadersMiddleware
 
     src = inspect.getsource(SecurityHeadersMiddleware.dispatch)
     assert "Strict-Transport-Security" in src, "应设置 HSTS 头"
@@ -555,6 +566,7 @@ def test_hsts_header():
 def test_classify_graceful_degradation():
     """RES-M01: 验证 classify 失败时优雅降级"""
     import inspect
+
     from agent.research import ResearchAgent
 
     src = inspect.getsource(ResearchAgent.research)
@@ -570,8 +582,9 @@ def test_classify_graceful_degradation():
 
 def test_dns_resolve_timeout():
     """SEC-C08: 验证 DNS 解析有超时保护"""
-    from utils import _resolve_with_timeout
     import inspect
+
+    from utils import _resolve_with_timeout
 
     src = inspect.getsource(_resolve_with_timeout)
     assert "timeout" in src, "_resolve_with_timeout 应有超时参数"
@@ -584,6 +597,7 @@ def test_dns_resolve_timeout():
 def test_constants_centralized():
     """MAINT-M01: 验证魔法数字已集中到 constants.py"""
     import inspect
+
     from config import constants
 
     assert hasattr(constants, "FETCH_PARALLEL_TIMEOUT"), "应有 FETCH_PARALLEL_TIMEOUT"

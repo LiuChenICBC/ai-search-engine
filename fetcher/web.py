@@ -1,19 +1,20 @@
 """网页内容抓取和文本提取 - 带重试 + 连接池 + URL 验证"""
 
+import concurrent.futures
 import logging
-import requests
-from bs4 import BeautifulSoup
 from dataclasses import dataclass
 from typing import Optional
-import concurrent.futures
 
-from utils import retry_with_backoff, validate_url
+import requests
+from bs4 import BeautifulSoup
+
 from config.constants import (
-    FETCH_PARALLEL_TIMEOUT,
     FETCH_MAX_WORKERS,
+    FETCH_PARALLEL_TIMEOUT,
     MAX_REDIRECTS,
     MIN_PARAGRAPH_LENGTH,
 )
+from utils import retry_with_backoff, validate_url
 
 logger = logging.getLogger("www_search.fetcher")
 
@@ -186,7 +187,7 @@ def extract_multiple(
             return_when=concurrent.futures.ALL_COMPLETED,
         )
         for f in not_done:
-            logger.warning(f"[fetcher] 抓取超时已取消")
+            logger.warning("[fetcher] 抓取超时已取消")
             f.cancel()
         results = []
         for future in done:

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """自包含的 web_search 工具，基于 DuckDuckGo Search (ddgs)，完全免费无需 API key。"""
 
-import sys
 import json
+import sys
+
 from ddgs import DDGS
 
 

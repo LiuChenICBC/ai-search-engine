@@ -4,32 +4,33 @@ import asyncio
 import hmac
 import logging
 import os
-import time
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import wraps
 from typing import Any, Callable
 
 import itsdangerous
-
 from fastapi import Request
 from fastapi.responses import RedirectResponse
+from starlette.datastructures import URL
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse as StarletteJSONResponse
-from starlette.datastructures import URL
 
-from db import verify_api_key, record_usage
+from config.constants import (
+    CONTENT_SECURITY_POLICY,
+    HSTS_MAX_AGE,
+    LOGIN_WINDOW_SECONDS,
+    MAX_LOGIN_ATTEMPTS,
+    MAX_LOGIN_TRACKED_IPS,
+    MAX_REQUEST_BODY_SIZE,
+    REFERRER_POLICY,
+    X_FRAME_OPTIONS,
+)
 from config.constants import (
     SESSION_MAX_AGE as _SESSION_MAX_AGE_CONST,
-    MAX_LOGIN_ATTEMPTS,
-    LOGIN_WINDOW_SECONDS,
-    MAX_LOGIN_TRACKED_IPS,
-    CONTENT_SECURITY_POLICY,
-    X_FRAME_OPTIONS,
-    HSTS_MAX_AGE,
-    REFERRER_POLICY,
-    MAX_REQUEST_BODY_SIZE,
 )
+from db import record_usage, verify_api_key
 
 logger = logging.getLogger("www_search.middleware")
 

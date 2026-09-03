@@ -1,17 +1,14 @@
 """深度测试：边缘情况、错误路径、并发、集成"""
 
-import sys
 import os
+import sys
 
 os.environ.setdefault("WWW_SEARCH_ADMIN_PASSWORD", "test_password")
 os.environ.setdefault("WWW_SEARCH_SECRET_KEY", "test_secret_key_for_testing_deep")
 sys.path.insert(0, os.path.dirname(__file__))
 
-import json
-import tempfile
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 PASS = 0
 FAIL = 0
@@ -71,7 +68,7 @@ print('OK')
 
 def test_db_create_user():
     """验证创建用户流程"""
-    from db import create_user, get_all_users, verify_api_key, get_user
+    from db import create_user, verify_api_key
 
     # 创建用户
     user = create_user("test-deep-" + str(int(time.time())))
@@ -90,7 +87,7 @@ def test_db_create_user():
     from db import toggle_user
 
     toggled = toggle_user(user["id"])
-    assert toggled["enabled"] == False
+    assert not toggled["enabled"]
     verified_disabled = verify_api_key(user["api_key"])
     assert verified_disabled is None
     ok("禁用后 API Key 验证失败")
@@ -98,7 +95,7 @@ def test_db_create_user():
 
 def test_db_record_usage():
     """验证使用量记录"""
-    from db import create_user, record_usage, get_usage_stats, get_global_stats
+    from db import create_user, get_global_stats, get_usage_stats, record_usage
 
     user = create_user("test-usage-" + str(int(time.time())))
     record_usage(user["id"], query="test query", tokens_used=100)
@@ -171,8 +168,8 @@ def test_db_regenerate_nonexistent():
 
 def test_fetcher_invalid_urls():
     """验证各种无效 URL"""
-    from utils import validate_url
     from fetcher.web import extract_url
+    from utils import validate_url
 
     invalid_urls = [
         "ftp://example.com",
@@ -220,8 +217,9 @@ def test_fetcher_extract_multiple_mixed():
 
 def test_llm_client_connection_error():
     """验证 LLM 连接失败时的错误处理"""
-    from llm.client import LLMClient
     from pathlib import Path
+
+    from llm.client import LLMClient
 
     config_path = str(Path(BASE_DIR) / "config.yaml")
     client = LLMClient(config_path)
@@ -239,9 +237,9 @@ def test_llm_client_connection_error():
 
 def test_llm_client_invalid_response():
     """验证 LLM 返回无效 JSON 时的错误处理"""
-    from llm.client import LLMClient
-    from utils import retry_with_backoff
     from pathlib import Path
+
+    from llm.client import LLMClient
 
     config_path = str(Path(BASE_DIR) / "config.yaml")
     client = LLMClient(config_path)
@@ -257,18 +255,11 @@ def test_llm_client_invalid_response():
 
 def test_llm_extract_content():
     """验证 content 提取逻辑"""
-    from llm.client import LLMClient
 
     # 测试各种响应格式
-    response1 = {"choices": [{"message": {"content": "hello"}}]}
-    response2 = {
-        "choices": [{"message": {"reasoning_content": "思考", "content": "answer"}}]
-    }
-    response3 = {"choices": [{"message": {}}]}
 
     # 私有方法测试
-    client = object()  # 仅测试函数逻辑
-    from llm.client import LLMClient as LC
+    object()  # 仅测试函数逻辑
     # 验证 _extract_content 静态方法
     # 实际上 _extract_content 是实例方法，但我们可以通过模拟测试
 
@@ -367,16 +358,14 @@ def test_security_headers():
     from main import app
 
     # 检查安全头中间件
-    has_security = False
     for m in app.user_middleware:
         if hasattr(m, "cls") and "add_security_headers" in str(m.cls):
-            has_security = True
+            pass
     ok("安全响应头中间件已注册")
 
 
 def test_api_key_middleware_skip():
     """验证 API Key 中间件跳过逻辑"""
-    from main import app
 
     assert True  # 中间件已注册
     ok("API Key 中间件已注册")
@@ -387,8 +376,9 @@ def test_api_key_middleware_skip():
 
 def test_concurrent_db_access():
     """验证并发数据库访问"""
-    from db import create_user, verify_api_key, get_db
     import threading
+
+    from db import create_user, verify_api_key
 
     results = []
     errors = []
@@ -425,7 +415,6 @@ def test_main_app_import():
 
 def test_admin_app_no_password():
     """验证无密码时 init_admin_config 拒绝启动"""
-    import importlib
 
     try:
         # 模拟清除密码环境变量

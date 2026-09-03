@@ -1,15 +1,16 @@
 """OpenAI 兼容 LLM 客户端 - 使用同步 requests 避免 async 兼容问题"""
 
 import json
+import logging
 import os
 import re
-import yaml
-import logging
-import requests
 from typing import Generator
 
+import requests
+import yaml
+
+from config.constants import CLASSIFY_MAX_TOKENS, CLASSIFY_TIMEOUT, DEFAULT_LLM_TIMEOUT
 from utils import retry_with_backoff
-from config.constants import DEFAULT_LLM_TIMEOUT, CLASSIFY_TIMEOUT, CLASSIFY_MAX_TOKENS
 
 logger = logging.getLogger("www_search.llm")
 

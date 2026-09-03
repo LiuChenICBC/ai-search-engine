@@ -1,11 +1,12 @@
 """SearXNG 搜索引擎 - 带重试 + 连接池 + SSRF 防护"""
 
 import logging
-import time
+
 import requests
-from .base import BaseSearchEngine, SearchResult
 
 from utils import retry_with_backoff, validate_url
+
+from .base import BaseSearchEngine, SearchResult
 
 logger = logging.getLogger("www_search.searxng")
 

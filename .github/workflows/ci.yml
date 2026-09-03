@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          node-version: 24
 
       - uses: actions/setup-python@v5
         with:
@@ -22,7 +24,9 @@ jobs:
           pip install ruff pytest mypy
 
       - name: Format check with ruff
-        run: ruff check . && ruff format --check .
+        run: |
+          ruff check .
+          ruff format --check .
 
       - name: Type check with mypy
         run: mypy --ignore-missing-imports --python-version=3.11 .

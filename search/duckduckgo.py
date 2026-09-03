@@ -1,7 +1,9 @@
 """DuckDuckGo 搜索引擎（备选）"""
 
 import logging
+
 from ddgs import DDGS
+
 from .base import BaseSearchEngine, SearchResult
 
 logger = logging.getLogger("www_search.ddgs")
