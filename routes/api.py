@@ -23,6 +23,7 @@ logger = logging.getLogger("www_search.routes.api")
 
 # ── Pydantic 请求模型 ──────────────────────────────────────────────
 
+
 class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="搜索查询")
     stream: bool = True
@@ -34,6 +35,7 @@ class ChatResponse(BaseModel):
 
 
 # ── 依赖注入函数 ───────────────────────────────────────────────────
+
 
 def get_agent() -> ResearchAgent:
     """从 app.state 获取 agent 实例（通过 Depends 注入）"""
@@ -59,6 +61,7 @@ def get_config_dep(request: Request) -> dict:
 
 # ── 路由工厂 ───────────────────────────────────────────────────────
 
+
 def create_api_routes(app: FastAPI):
     """创建 API 路由 — 通过 Depends 注入依赖"""
 
@@ -83,7 +86,9 @@ def create_api_routes(app: FastAPI):
         token_count = estimate_tokens(result.answer)
         response.headers["X-Tokens-Used"] = str(token_count)
 
-        logger.info(f"200 POST /api/chat - query='{req.query[:50]}' tokens={token_count}")
+        logger.info(
+            f"200 POST /api/chat - query='{req.query[:50]}' tokens={token_count}"
+        )
         return response
 
     @app.post("/api/chat/stream")
@@ -93,6 +98,7 @@ def create_api_routes(app: FastAPI):
         request: Request = ...,
     ):
         """流式聊天 - SSE"""
+
         def event_generator():
             user_id = None
             if hasattr(request, "state") and hasattr(request.state, "user"):
@@ -152,5 +158,9 @@ def create_api_routes(app: FastAPI):
             logger.error(f"503 GET /api/health - LLM 连通性检查失败: {e}")
             return JSONResponse(
                 status_code=503,
-                content={"status": "degraded", "service": "www_search", "llm_error": str(e)},
+                content={
+                    "status": "degraded",
+                    "service": "www_search",
+                    "llm_error": str(e),
+                },
             )

@@ -30,8 +30,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agent.research import ResearchAgent
 from middleware import (
-    APIKeyMiddleware, AdminCSRFMiddleware, SecurityHeadersMiddleware, RequestSizeLimitMiddleware,
-    set_db_executor, init_admin_config,
+    APIKeyMiddleware,
+    AdminCSRFMiddleware,
+    SecurityHeadersMiddleware,
+    RequestSizeLimitMiddleware,
+    set_db_executor,
+    init_admin_config,
 )
 
 # 日志配置
@@ -75,8 +79,12 @@ async def lifespan(app: FastAPI):
         raise
 
     # 检查明文 API Key 警告
-    if config.get("llm", {}).get("api_key") and not os.environ.get("WWW_SEARCH_LLM_API_KEY"):
-        logger.warning("[main] 检测到 LLM API Key 明文存储在 config.yaml 中，建议使用环境变量 WWW_SEARCH_LLM_API_KEY")
+    if config.get("llm", {}).get("api_key") and not os.environ.get(
+        "WWW_SEARCH_LLM_API_KEY"
+    ):
+        logger.warning(
+            "[main] 检测到 LLM API Key 明文存储在 config.yaml 中，建议使用环境变量 WWW_SEARCH_LLM_API_KEY"
+        )
 
     try:
         agent = ResearchAgent(config_path)
@@ -99,6 +107,7 @@ async def lifespan(app: FastAPI):
     # REL-L01: 关闭 fetcher 全局 Session，释放连接池
     try:
         from fetcher.web import _session as fetcher_session
+
         fetcher_session.close()
     except Exception:
         pass
@@ -159,6 +168,7 @@ app.add_middleware(RequestSizeLimitMiddleware)
 
 # ==================== 速率限制异常处理 ====================
 
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     logger.warning(f"429 {request.method} {request.url.path} - 请求过于频繁")
@@ -171,7 +181,12 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 # ==================== 首页路由 ====================
 
 # 挂载静态文件 (JS, CSS)
-app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "ui" / "static")), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=str(Path(__file__).parent / "ui" / "static")),
+    name="static",
+)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -183,10 +198,12 @@ async def index(request: Request):
 
 # 注册 API 路由 — 使用 Depends 依赖注入获取 agent/config
 from routes.api import create_api_routes
+
 create_api_routes(app)
 
 # 注册 Admin 路由
 from routes.admin import create_admin_routes
+
 create_admin_routes(app, templates)
 
 
@@ -201,6 +218,7 @@ create_admin_routes(app, templates)
 
 if __name__ == "__main__":
     import uvicorn
+
     with open(Path(__file__).parent / "config.yaml", "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     server_cfg = cfg.get("server", {})

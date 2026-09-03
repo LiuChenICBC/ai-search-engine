@@ -10,17 +10,32 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from db import (
-    create_user, get_all_users, toggle_user, regenerate_key,
-    get_usage_stats, get_global_stats, get_user,
+    create_user,
+    get_all_users,
+    toggle_user,
+    regenerate_key,
+    get_usage_stats,
+    get_global_stats,
+    get_user,
 )
 from middleware import (
-    login_required, get_admin_session, generate_csrf_token,
-    _check_login_rate, _login_lock,
-    _login_attempts, get_db_executor,
+    login_required,
+    get_admin_session,
+    generate_csrf_token,
+    _check_login_rate,
+    _login_lock,
+    _login_attempts,
+    get_db_executor,
 )
+
 # 通过模块引用动态配置值，避免导入时拿到 None 的快照
 import middleware as _middleware
-from config.constants import MAX_USERNAME_LENGTH, MAX_USAGE_LIMIT, SESSION_COOKIE_MAX_AGE, SECURE_COOKIES
+from config.constants import (
+    MAX_USERNAME_LENGTH,
+    MAX_USAGE_LIMIT,
+    SESSION_COOKIE_MAX_AGE,
+    SECURE_COOKIES,
+)
 
 logger = logging.getLogger("www_search.routes.admin")
 
@@ -52,9 +67,9 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
         session = get_admin_session(request)
         if session and session.get("logged_in"):
             return RedirectResponse(url="/admin", status_code=303)
-        
+
         flash_messages = _parse_flash_messages(request)
-        
+
         return templates.TemplateResponse(
             request,
             "admin/login.html",
@@ -66,7 +81,7 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
         """Admin 登录处理"""
         form = getattr(request.state, "parsed_form", None) or await request.form()
         password = form.get("password", "")
-        
+
         # 检查登录速率限制
         client_ip = request.client.host if request.client else "127.0.0.1"
         if _check_login_rate(client_ip):
@@ -75,19 +90,19 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
                 url=f"/admin/login?flash=error:登录尝试过多，请 5 分钟后再试",
                 status_code=303,
             )
-        
+
         if hmac.compare_digest(password, _middleware.ADMIN_PASSWORD):
             # 登录成功，清除尝试记录（加锁保证线程安全）
             with _login_lock:
                 _login_attempts.pop(client_ip, None)
-            
+
             # 创建 session（带过期时间）
             session_data = {"logged_in": True}
             session_cookie = _middleware.session_serializer.dumps(session_data)
-            
+
             # 生成 CSRF token
             csrf_token = generate_csrf_token()
-            
+
             response = RedirectResponse(url="/admin", status_code=303)
             response.set_cookie(
                 key="admin_session",
@@ -135,7 +150,12 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
         return templates.TemplateResponse(
             request,
             "admin/dashboard.html",
-            {"stats": stats, "users": users, "csrf_token": csrf_token, "flash_messages": flash_messages},
+            {
+                "stats": stats,
+                "users": users,
+                "csrf_token": csrf_token,
+                "flash_messages": flash_messages,
+            },
         )
 
     @app.get("/admin/users/create", response_class=HTMLResponse)
@@ -204,7 +224,9 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
             logger.info(f"用户 {user['username']}({user_id}) 已{status}")
         except ValueError as e:
             logger.error(f"切换用户状态失败: {e}")
-            return RedirectResponse(url="/admin?flash=error:操作失败，用户不存在", status_code=303)
+            return RedirectResponse(
+                url="/admin?flash=error:操作失败，用户不存在", status_code=303
+            )
 
         return RedirectResponse(url="/admin", status_code=303)
 

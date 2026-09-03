@@ -26,7 +26,9 @@ class LLMClient:
         llm_cfg = cfg.get("llm", {})
         self.api_base = llm_cfg.get("api_base", "http://localhost:11434/v1")
         # API Key 优先级：环境变量 > 配置文件
-        self.api_key = os.environ.get("WWW_SEARCH_LLM_API_KEY") or llm_cfg.get("api_key", "ollama")
+        self.api_key = os.environ.get("WWW_SEARCH_LLM_API_KEY") or llm_cfg.get(
+            "api_key", "ollama"
+        )
         self.model = llm_cfg.get("model", "qwen3:8b")
         self.classify_model = llm_cfg.get("classify_model", self.model)
         self.temperature = llm_cfg.get("temperature", 0.3)
@@ -40,10 +42,12 @@ class LLMClient:
         )
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
-        self.session.headers.update({
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        })
+        self.session.headers.update(
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}",
+            }
+        )
 
     def _extract_content(self, message: dict) -> str:
         """从消息中提取内容，优先 content，其次 reasoning_content"""
@@ -64,7 +68,9 @@ class LLMClient:
         return choices[0].get("message", {})
 
     @retry_with_backoff(max_retries=3, base_delay=1.0, logger=logger)
-    def chat(self, messages: list[dict], model: str | None = None, stream: bool = False) -> str:
+    def chat(
+        self, messages: list[dict], model: str | None = None, stream: bool = False
+    ) -> str:
         """发送聊天请求，返回完整文本"""
         resp = self.session.post(
             f"{self.api_base}/chat/completions",
@@ -82,7 +88,9 @@ class LLMClient:
         message = self._safe_extract(data)
         return self._extract_content(message)
 
-    def chat_stream(self, messages: list[dict], model: str | None = None) -> Generator[str, None, None]:
+    def chat_stream(
+        self, messages: list[dict], model: str | None = None
+    ) -> Generator[str, None, None]:
         """流式聊天，yield 每个 chunk 的文本"""
         resp = self.session.post(
             f"{self.api_base}/chat/completions",
@@ -170,28 +178,42 @@ class LLMClient:
         except json.JSONDecodeError:
             # 策略1: 提取 ```json ... ``` 或 ``` ... ``` 代码块
             bt3 = chr(96) * 3  # 三个反引号
-            for match in re.finditer(re.escape(bt3) + r'(?:json)?\s*\n?([\s\S]*?)\n?' + re.escape(bt3), text):
+            for match in re.finditer(
+                re.escape(bt3) + r"(?:json)?\s*\n?([\s\S]*?)\n?" + re.escape(bt3), text
+            ):
                 try:
                     return json.loads(match.group(1).strip())
                 except json.JSONDecodeError:
                     continue
             # 策略2: 从后往前找包含目标字段的最外层 JSON
-            last_brace = text.rfind('}')
+            last_brace = text.rfind("}")
             if last_brace != -1:
                 for start in range(last_brace, -1, -1):
-                    if text[start] == '{':
-                        candidate = text[start:last_brace + 1]
-                        if '"needs_research"' in candidate and '"query_rewrite"' in candidate:
+                    if text[start] == "{":
+                        candidate = text[start : last_brace + 1]
+                        if (
+                            '"needs_research"' in candidate
+                            and '"query_rewrite"' in candidate
+                        ):
                             try:
                                 return json.loads(candidate.strip())
                             except json.JSONDecodeError:
                                 break
             # 策略3: 非贪婪 regex
-            match = re.search(r'(\{[\s\S]*?"needs_research"[\s\S]*?"query_rewrite"[\s\S]*?\})', text)
+            match = re.search(
+                r'(\{[\s\S]*?"needs_research"[\s\S]*?"query_rewrite"[\s\S]*?\})', text
+            )
             if match:
                 try:
                     return json.loads(match.group())
                 except json.JSONDecodeError:
                     pass
-            logger.warning(f"[llm] classify JSON 解析失败，使用默认值. raw={text[:300]}")
-            return {"needs_research": True, "query_rewrite": query, "sources": ["web"], "reason": "json_parse_failed"}
+            logger.warning(
+                f"[llm] classify JSON 解析失败，使用默认值. raw={text[:300]}"
+            )
+            return {
+                "needs_research": True,
+                "query_rewrite": query,
+                "sources": ["web"],
+                "reason": "json_parse_failed",
+            }

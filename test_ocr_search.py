@@ -28,12 +28,14 @@ for q in queries:
     print(f"\n=== 搜索: {q} ===")
     results = search_all(q, max_results=10)
     for r in results:
-        all_results.append({
-            "query": q,
-            "title": r.title,
-            "url": r.url,
-            "snippet": r.snippet,
-        })
+        all_results.append(
+            {
+                "query": q,
+                "title": r.title,
+                "url": r.url,
+                "snippet": r.snippet,
+            }
+        )
         print(f"  - {r.title[:60]}: {r.url}")
 
 # 保存搜索结果

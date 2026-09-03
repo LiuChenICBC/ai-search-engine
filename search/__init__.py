@@ -45,10 +45,14 @@ def load_search_engines(config_path: str = "config.yaml") -> list[BaseSearchEngi
     # 优先 SearXNG
     searxng_url = search_cfg.get("searxng_url", "")
     if searxng_url:
-        engines.append(SearXNGSearch(
-            base_url=searxng_url,
-            engines=search_cfg.get("searxng_engines", ["google", "bing", "duckduckgo"]),
-        ))
+        engines.append(
+            SearXNGSearch(
+                base_url=searxng_url,
+                engines=search_cfg.get(
+                    "searxng_engines", ["google", "bing", "duckduckgo"]
+                ),
+            )
+        )
 
     # DuckDuckGo 作为备选
     if search_cfg.get("use_ddgs", True):
@@ -57,21 +61,38 @@ def load_search_engines(config_path: str = "config.yaml") -> list[BaseSearchEngi
     return engines
 
 
-def search_all(query: str, max_results: int = DEFAULT_MAX_RESULTS, config_path: str = "config.yaml") -> list[SearchResult]:
+def search_all(
+    query: str, max_results: int = DEFAULT_MAX_RESULTS, config_path: str = "config.yaml"
+) -> list[SearchResult]:
     """并行搜索所有可用引擎，合并去重"""
     engines = _load_and_cache_engines(config_path)
     if not engines:
         # 默认 DuckDuckGo
         engines = [DuckDuckGoSearch()]
 
-    logger.info(f"[search] 搜索 query='{query}', max_results={max_results}, engines={[e.name for e in engines]}")
+    logger.info(
+        f"[search] 搜索 query='{query}', max_results={max_results}, engines={[e.name for e in engines]}"
+    )
 
     # 并行搜索（带超时）- 使用 utils.retry_with_backoff 统一重试逻辑
     all_results = []
     failed_engines = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(engines)) as executor:
-        ft_map = {executor.submit(retry_with_backoff(max_retries=2, base_delay=0.5, logger=logger)(engine.search), query, max_results): engine for engine in engines}
-        done, not_done = concurrent.futures.wait(ft_map, timeout=SEARCH_PARALLEL_TIMEOUT, return_when=concurrent.futures.ALL_COMPLETED)
+        ft_map = {
+            executor.submit(
+                retry_with_backoff(max_retries=2, base_delay=0.5, logger=logger)(
+                    engine.search
+                ),
+                query,
+                max_results,
+            ): engine
+            for engine in engines
+        }
+        done, not_done = concurrent.futures.wait(
+            ft_map,
+            timeout=SEARCH_PARALLEL_TIMEOUT,
+            return_when=concurrent.futures.ALL_COMPLETED,
+        )
         for f in not_done:
             logger.warning(f"[search] 引擎搜索超时已取消")
             f.cancel()

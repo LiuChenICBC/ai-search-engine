@@ -68,25 +68,28 @@ _login_lock = threading.Lock()
 def init_admin_config():
     """初始化 admin 配置（必须在启动时调用）"""
     global ADMIN_PASSWORD, SECRET_KEY, session_serializer
-    
+
     ADMIN_PASSWORD = os.environ.get("WWW_SEARCH_ADMIN_PASSWORD")
     if not ADMIN_PASSWORD:
         raise RuntimeError(
             "必须设置环境变量 WWW_SEARCH_ADMIN_PASSWORD 指定管理后台密码\n"
             "   export WWW_SEARCH_ADMIN_PASSWORD='your-strong-password-here'"
         )
-    
+
     SECRET_KEY = os.environ.get("WWW_SEARCH_SECRET_KEY")
     if not SECRET_KEY:
         raise RuntimeError(
             "必须设置环境变量 WWW_SEARCH_SECRET_KEY 指定 session 签名密钥\n"
             "   生成: python3 -c 'import secrets; print(secrets.token_hex(32))'"
         )
-    
-    session_serializer = itsdangerous.URLSafeTimedSerializer(SECRET_KEY, salt="www_search-session")
+
+    session_serializer = itsdangerous.URLSafeTimedSerializer(
+        SECRET_KEY, salt="www_search-session"
+    )
 
 
 # ==================== Admin Session 工具 ====================
+
 
 def generate_csrf_token() -> str:
     """生成 CSRF token"""
@@ -113,6 +116,7 @@ def get_admin_session(request: Request) -> dict | None:
 
 def login_required(endpoint: Callable[..., Any]) -> Callable[..., Any]:
     """装饰器：要求已登录 admin"""
+
     @wraps(endpoint)
     async def wrapper(*args, **kwargs):
         request = kwargs.get("request") or args[0]
@@ -120,6 +124,7 @@ def login_required(endpoint: Callable[..., Any]) -> Callable[..., Any]:
         if not session or not session.get("logged_in"):
             return RedirectResponse(url="/admin/login", status_code=303)
         return await endpoint(*args, **kwargs)
+
     return wrapper
 
 
@@ -133,7 +138,9 @@ def _check_login_rate(ip: str) -> bool:
             del _login_attempts[oldest_ip]
 
         # 过滤当前时间窗口内的尝试记录
-        attempts = [t for t in _login_attempts.get(ip, []) if now - t < LOGIN_WINDOW_SECONDS]
+        attempts = [
+            t for t in _login_attempts.get(ip, []) if now - t < LOGIN_WINDOW_SECONDS
+        ]
 
         if len(attempts) >= MAX_LOGIN_ATTEMPTS:
             _login_attempts[ip] = attempts
@@ -147,11 +154,14 @@ def _check_login_rate(ip: str) -> bool:
 
 # ==================== API Key 中间件 ====================
 
+
 async def _record_usage_async(user_id: int, query: str, tokens_used: int):
     """异步记录使用量（fire-and-forget）"""
     loop = asyncio.get_event_loop()
     try:
-        await loop.run_in_executor(get_db_executor(), record_usage, user_id, query, tokens_used)
+        await loop.run_in_executor(
+            get_db_executor(), record_usage, user_id, query, tokens_used
+        )
     except Exception as e:
         logger.warning(f"[middleware] 记录使用量失败: {e}")
 
@@ -161,7 +171,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
-        
+
         # 跳过认证的路由（Web UI + 健康检查 + 静态资源）
         if path == "/" or path == "/api/health":
             return await call_next(request)
@@ -176,7 +186,10 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             logger.warning(f"401 {request.method} {request.url.path} - 缺少 API Key")
             return StarletteJSONResponse(
                 status_code=401,
-                content={"error": "Missing API Key", "message": "请在请求头中添加 X-API-Key"},
+                content={
+                    "error": "Missing API Key",
+                    "message": "请在请求头中添加 X-API-Key",
+                },
             )
 
         # 验证 API Key
@@ -195,14 +208,13 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         # 记录使用量（fire-and-forget）
         tokens_used = int(response.headers.get("X-Tokens-Used", 0))
         if tokens_used > 0:
-            asyncio.create_task(
-                _record_usage_async(user["id"], "", tokens_used)
-            )
+            asyncio.create_task(_record_usage_async(user["id"], "", tokens_used))
 
         return response
 
 
 # ==================== CSRF 中间件 ====================
+
 
 class AdminCSRFMiddleware(BaseHTTPMiddleware):
     """Admin POST 请求的 CSRF 验证"""
@@ -211,30 +223,37 @@ class AdminCSRFMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/admin") and request.method == "POST":
             if request.url.path == "/admin/login":
                 return await call_next(request)
-            
+
             session_token = request.cookies.get("csrf_token", "")
             try:
                 form = await request.form()
             except Exception:
-                logger.warning(f"CSRF 验证失败 - 无法解析表单: {request.method} {request.url.path}")
-                return RedirectResponse(url="/admin?flash=error:请求格式错误", status_code=303)
-            
+                logger.warning(
+                    f"CSRF 验证失败 - 无法解析表单: {request.method} {request.url.path}"
+                )
+                return RedirectResponse(
+                    url="/admin?flash=error:请求格式错误", status_code=303
+                )
+
             form_token = form.get("csrf_token", "")
-            
+
             if not validate_csrf_token(session_token, form_token):
                 logger.warning(f"CSRF 验证失败: {request.method} {request.url.path}")
                 response = RedirectResponse(url="/admin", status_code=303)
-                response.url = str(URL("/admin?flash=error:安全验证失败，请刷新页面重试"))
+                response.url = str(
+                    URL("/admin?flash=error:安全验证失败，请刷新页面重试")
+                )
                 return response
 
             # 将已解析的 form 存到 request.state，避免路由 handler 重复消费 body
             request.state.parsed_form = form
-        
+
         response = await call_next(request)
         return response
 
 
 # ==================== 安全响应头中间件 ====================
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """安全响应头中间件"""
@@ -252,6 +271,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 # ==================== 请求大小限制中间件 ====================
 
+
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     """限制请求体大小，防止超大 body 攻击"""
 
@@ -264,7 +284,10 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
             )
             return StarletteJSONResponse(
                 status_code=413,
-                content={"error": "Payload Too Large", "message": "请求体过大，最大 1MB"},
+                content={
+                    "error": "Payload Too Large",
+                    "message": "请求体过大，最大 1MB",
+                },
             )
 
         response = await call_next(request)
