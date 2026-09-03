@@ -54,3 +54,8 @@ ignore = ["E501"]
 testpaths = ["."]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+exclude = ["output/"]

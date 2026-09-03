@@ -27,7 +27,7 @@ jobs:
           ruff format --check .
 
       - name: Type check with mypy
-        run: mypy --ignore-missing-imports --python-version=3.11 .
+        run: mypy .
 
       - name: Test with pytest
         run: pytest

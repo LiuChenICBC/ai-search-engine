@@ -26,7 +26,7 @@ cases = [
 ]
 print(f"过滤后测试样本: {len(cases)} 张\n")
 
-results = []
+results: list[dict[str, object]] = []
 for case in cases:
     img_path = case["file"]
     expected = case["text"]
@@ -122,13 +122,15 @@ print(f"精确匹配: {exact_count} ({exact_count / total * 100:.1f}%)")
 print(f"部分匹配: {partial_count} ({partial_count / total * 100:.1f}%)")
 
 # 按退化类型统计
-by_degradation = defaultdict(lambda: {"total": 0, "exact": 0, "partial": 0})
-for r in results:
-    d = r["degradation"]
+by_degradation: defaultdict[str, dict[str, int]] = defaultdict(
+    lambda: {"total": 0, "exact": 0, "partial": 0}
+)
+for item in results:
+    d = str(item["degradation"])
     by_degradation[d]["total"] += 1
-    if r["exact_match"]:
+    if item["exact_match"]:
         by_degradation[d]["exact"] += 1
-    if r["partial_match"]:
+    if item["partial_match"]:
         by_degradation[d]["partial"] += 1
 
 print("\n=== 按退化类型统计 ===")

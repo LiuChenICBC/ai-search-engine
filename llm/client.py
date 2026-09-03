@@ -201,12 +201,12 @@ class LLMClient:
                             except json.JSONDecodeError:
                                 break
             # 策略3: 非贪婪 regex
-            match = re.search(
+            match_result = re.search(
                 r'(\{[\s\S]*?"needs_research"[\s\S]*?"query_rewrite"[\s\S]*?\})', text
             )
-            if match:
+            if match_result:
                 try:
-                    return json.loads(match.group())
+                    return json.loads(match_result.group())
                 except json.JSONDecodeError:
                     pass
             logger.warning(

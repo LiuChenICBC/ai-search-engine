@@ -125,7 +125,8 @@ def extract_url(
         if not title_text:
             og_title = soup.find("meta", property="og:title")
             if og_title:
-                title_text = og_title.get("content", "")
+                content_val = og_title.get("content", "")
+                title_text = str(content_val) if content_val else ""
 
         # 提取正文 - 尝试多种策略
         content = ""

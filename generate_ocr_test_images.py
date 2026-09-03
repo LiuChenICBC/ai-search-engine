@@ -14,7 +14,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 try:
     font = ImageFont.truetype("/System/Library/Fonts/PingFang.ttc", 40)
 except Exception:
-    font = ImageFont.load_default()
+    font = ImageFont.load_default()  # type: ignore[assignment]
 
 # 测试文本（中英文混合，有标准答案）
 test_texts = [
@@ -63,8 +63,8 @@ configs = [
     (
         "low_res",
         "低分辨率(50x50)",
-        lambda img: img.resize((50, 50), Image.LANCZOS).resize(
-            (400, 100), Image.LANCZOS
+        lambda img: img.resize((50, 50), Image.Resampling.LANCZOS).resize(
+            (400, 100), Image.Resampling.LANCZOS
         ),
     ),
     (
@@ -85,8 +85,8 @@ configs = [
         "综合退化(低分+模糊+反光)",
         lambda img: add_glare(
             img.filter(ImageFilter.GaussianBlur(radius=2))
-            .resize((60, 30), Image.LANCZOS)
-            .resize((400, 100), Image.LANCZOS),
+            .resize((60, 30), Image.Resampling.LANCZOS)
+            .resize((400, 100), Image.Resampling.LANCZOS),
             0.5,
         ),
     ),

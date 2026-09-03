@@ -90,14 +90,22 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
                 status_code=303,
             )
 
-        if hmac.compare_digest(password, _middleware.ADMIN_PASSWORD):
+        admin_pw = str(_middleware.ADMIN_PASSWORD or "")
+        if hmac.compare_digest(str(password), admin_pw):
             # 登录成功，清除尝试记录（加锁保证线程安全）
             with _login_lock:
                 _login_attempts.pop(client_ip, None)
 
             # 创建 session（带过期时间）
             session_data = {"logged_in": True}
-            session_cookie = _middleware.session_serializer.dumps(session_data)
+            serializer = _middleware.session_serializer
+            if serializer is None:
+                logger.error("session_serializer 未初始化")
+                return RedirectResponse(
+                    url="/admin/login?flash=error:服务配置错误",
+                    status_code=303,
+                )
+            session_cookie = serializer.dumps(session_data)
 
             # 生成 CSRF token
             csrf_token = generate_csrf_token()
@@ -173,7 +181,8 @@ def create_admin_routes(app: FastAPI, templates: Jinja2Templates) -> None:
     async def admin_user_create_post(request: Request):
         """创建用户处理"""
         form = getattr(request.state, "parsed_form", None) or await request.form()
-        username = form.get("username", "").strip()
+        username_raw = form.get("username", "")
+        username = str(username_raw).strip() if username_raw else ""
 
         if not username:
             return RedirectResponse(

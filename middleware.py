@@ -110,6 +110,8 @@ def get_admin_session(request: Request) -> dict | None:
     if not session_cookie:
         return None
     try:
+        if session_serializer is None:
+            return None
         return session_serializer.loads(session_cookie, max_age=_SESSION_MAX_AGE)
     except (itsdangerous.BadSignature, itsdangerous.SignatureExpired, ValueError):
         return None
@@ -237,11 +239,15 @@ class AdminCSRFMiddleware(BaseHTTPMiddleware):
                 )
 
             form_token = form.get("csrf_token", "")
+            if isinstance(form_token, str):
+                form_token_str = form_token
+            else:
+                form_token_str = ""
 
-            if not validate_csrf_token(session_token, form_token):
+            if not validate_csrf_token(session_token, form_token_str):
                 logger.warning(f"CSRF 验证失败: {request.method} {request.url.path}")
                 response = RedirectResponse(url="/admin", status_code=303)
-                response.url = str(
+                response.headers["Location"] = str(
                     URL("/admin?flash=error:安全验证失败，请刷新页面重试")
                 )
                 return response

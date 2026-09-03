@@ -42,7 +42,7 @@ def load_search_engines(config_path: str = "config.yaml") -> list[BaseSearchEngi
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
 
-    engines = []
+    engines: list[BaseSearchEngine] = []
     search_cfg = cfg.get("search", {})
 
     # 优先 SearXNG
