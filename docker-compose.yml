@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  www_search:
+    build: .
+    ports:
+      - "8700:8700"
+    environment:
+      - WWW_SEARCH_ADMIN_PASSWORD=${WWW_SEARCH_ADMIN_PASSWORD}
+      - WWW_SEARCH_SECRET_KEY=${WWW_SEARCH_SECRET_KEY}
+      - WWW_SEARCH_LLM_API_KEY=${WWW_SEARCH_LLM_API_KEY}
+      - WWW_SEARCH_RELOAD=${WWW_SEARCH_RELOAD:-false}
+    volumes:
+      - ./www_search.db:/app/www_search.db
+    depends_on:
+      searxng:
+        condition: service_healthy
+    restart: unless-stopped
+
+  searxng:
+    profiles: ["searxng"]
+    image: searxng/searxng:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - searxng_data:/etc/searxng
+      - searxng_cache:/var/cache/searxng
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  searxng_data:
+  searxng_cache:

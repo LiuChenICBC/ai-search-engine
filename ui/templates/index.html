@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>www_search - AI Search</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface2: #1e1e1e;
+            --border: #2a2a2a;
+            --text: #e0e0e0;
+            --text-dim: #888;
+            --accent: #4f8ff7;
+            --accent-glow: rgba(79, 143, 247, 0.15);
+            --green: #34d399;
+            --orange: #fbbf24;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent), #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .status {
+            font-size: 12px;
+            color: var(--green);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Main layout */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Input area */
+        .input-area {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--bg);
+            padding-bottom: 16px;
+        }
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .input-box {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: flex-end;
+            transition: border-color 0.2s;
+        }
+        .input-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .input-box textarea {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            max-height: 200px;
+            min-height: 24px;
+        }
+        .input-box textarea::placeholder {
+            color: var(--text-dim);
+        }
+        .send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+        .send-btn:hover { opacity: 0.85; }
+        .send-btn:active { transform: scale(0.95); }
+        .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .send-btn svg { width: 18px; height: 18px; }
+
+        /* Messages */
+        .messages {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            padding-top: 8px;
+        }
+
+        .message {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            padding: 12px 18px;
+            background: var(--surface2);
+            border-radius: 12px;
+            border-left: 3px solid var(--accent);
+            margin-bottom: 8px;
+        }
+        .message.user .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .message.assistant {
+            padding: 0;
+        }
+        .message.assistant .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--green);
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Status messages */
+        .status-msg {
+            font-size: 13px;
+            color: var(--text-dim);
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-msg .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Answer content */
+        .answer-content {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text);
+        }
+        .answer-content h2 {
+            font-size: 17px;
+            font-weight: 600;
+            margin: 16px 0 8px;
+            color: #fff;
+        }
+        .answer-content p { margin-bottom: 12px; }
+        .answer-content a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .answer-content a:hover { text-decoration: underline; }
+        .answer-content code {
+            background: var(--surface2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .answer-content pre {
+            background: var(--surface);
+            padding: 14px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 12px 0;
+            border: 1px solid var(--border);
+        }
+        .answer-content pre code {
+            background: none;
+            padding: 0;
+        }
+        .answer-content ul, .answer-content ol {
+            padding-left: 20px;
+            margin-bottom: 12px;
+        }
+        .answer-content li { margin-bottom: 4px; }
+
+        /* Sources */
+        .sources {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .sources-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 600;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .source-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+        .source-item:hover {
+            border-color: var(--accent);
+        }
+        .source-num {
+            font-size: 11px;
+            color: var(--accent);
+            font-weight: 700;
+            min-width: 20px;
+            padding-top: 2px;
+        }
+        .source-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .source-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .source-title a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .source-title a:hover {
+            text-decoration: underline;
+        }
+        .source-url {
+            font-size: 11px;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .source-snippet {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Welcome */
+        .welcome {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .welcome h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--accent), #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .welcome p {
+            color: var(--text-dim);
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+        /* Cursor blink */
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 16px;
+            background: var(--accent);
+            margin-left: 2px;
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Settings */
+        .settings-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+        .settings-bar .key-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-dim);
+        }
+        .settings-bar .key-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .key-dot.ok { background: var(--green); }
+        .key-dot.missing { background: #ef4444; }
+        .settings-bar button {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .settings-bar button:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 440px;
+        }
+        .modal-box h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .modal-box p {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        .modal-box input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 12px;
+        }
+        .modal-box input:focus {
+            border-color: var(--accent);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .modal-actions button {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .modal-actions button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ www_search</h1>
+        <div class="status">Online</div>
+    </div>
+
+    <div class="container">
+        <div class="input-area">
+            <div class="settings-bar" id="settingsBar">
+                <div class="key-status">
+                    <span class="key-dot missing" id="keyDot"></span>
+                    <span id="keyStatusText">未配置 API Key</span>
+                </div>
+                <button id="settingsBtn">⚙️ 设置</button>
+            </div>
+            <div class="input-wrapper">
+                <div class="input-box">
+                    <textarea id="query" rows="1" placeholder="问任何问题..."></textarea>
+                </div>
+                <button class="send-btn" id="sendBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="messages" class="messages">
+            <div class="welcome" id="welcome">
+                <h2>你好，有什么可以帮你？</h2>
+                <p>基于本地 LLM 的 AI 搜索引擎，无需 Docker</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key 设置弹窗 -->
+    <div class="modal-overlay" id="keyModal">
+        <div class="modal-box">
+            <h3>API Key 设置</h3>
+            <p>从管理后台获取你的 API Key，粘贴到下方。Key 仅保存在浏览器本地。</p>
+            <input type="password" id="apiKeyInput" placeholder="粘贴 API Key..."/>
+            <div class="modal-actions">
+                <button id="cancelKeyBtn">取消</button>
+                <button class="primary" id="saveKeyBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js?v=3"></script>
+</body>
+</html>

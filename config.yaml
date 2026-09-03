@@ -1,0 +1,47 @@
+# www_search - Perplexica-like AI Search Engine
+# 配置文件
+
+# LLM 设置（OpenAI 兼容 API）
+llm:
+  # 本地 Ollama: http://localhost:11434/v1
+  # 本地 LM Studio: http://localhost:1234/v1
+  # 云端 OpenAI: https://api.openai.com/v1
+  api_base: "http://localhost:1234/v1"
+  # API Key（可通过环境变量 WWW_SEARCH_LLM_API_KEY 覆盖）
+  api_key: "lm-studio"
+  # 回答模型（需要较强的推理能力）
+  model: "default"
+  # 分类模型（可以用小模型）
+  classify_model: "default"
+  temperature: 0.3
+  max_tokens: 8192
+
+# 搜索设置
+search:
+  # 首选 SearXNG（需要自建 SearXNG 实例）
+  # 没有 SearXNG 会自动降级到 DuckDuckGo
+  searxng_url: ""  # 例如: http://localhost:8080
+  searxng_engines: ["google", "bing", "duckduckgo", "wikipedia"]
+  # DuckDuckGo 作为备选
+  use_ddgs: true
+  # 每个查询最多返回多少搜索结果
+  max_results: 10
+  # 抓取多少个结果页面提取内容（多抓几页保证信息充分）
+  max_scrape: 6
+
+# 内容抓取
+fetcher:
+  timeout: 15
+  max_content_length: 8000  # 每页最大提取字符数
+
+# Web UI 设置
+server:
+  host: "0.0.0.0"
+  port: 8700
+  cors_origins: ["http://localhost:8700", "http://127.0.0.1:8700"]  # 限制 CORS 来源
+
+# 优化模式（Perplexica 风格）
+# speed: 少搜索，快回答
+# balanced: 平衡
+# quality: 多搜索，高质量回答
+optimization_mode: "balanced"
