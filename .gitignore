@@ -50,3 +50,6 @@ temp/
 
 # Ruff
 .ruff_cache/
+
+# Scripts
+setup.sh
