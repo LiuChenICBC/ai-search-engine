@@ -13,7 +13,6 @@ from typing import Any, Callable
 import itsdangerous
 from fastapi import Request
 from fastapi.responses import RedirectResponse
-from starlette.datastructures import URL
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse as StarletteJSONResponse
 
