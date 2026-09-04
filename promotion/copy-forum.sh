@@ -100,6 +100,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://www.v2ex.com/new"
 }
 
 get_zhihu() {
@@ -137,6 +140,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://www.zhihu.com/creator/content"
 }
 
 get掘金() {
@@ -206,6 +212,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://juejin.cn/post/new"
 }
 
 get_reddit_selfhosted() {
@@ -261,6 +270,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://www.reddit.com/r/selfhosted/submit"
 }
 
 get_reddit_python() {
@@ -304,6 +316,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://www.reddit.com/r/Python/submit"
 }
 
 get_reddit_localllama() {
@@ -341,6 +356,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://www.reddit.com/r/LocalLLaMA/submit"
 }
 
 get_hn() {
@@ -381,6 +399,9 @@ EOF
     copy_to_clipboard "标题: $title
 
 $content"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://news.ycombinator.com/submitlink"
 }
 
 get_twitter_1() {
@@ -402,6 +423,9 @@ pip install -r requirements.txt
     echo "$tweet"
     echo ""
     copy_to_clipboard "$tweet"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://twitter.com/compose/tweet"
 }
 
 get_twitter_2() {
@@ -425,6 +449,9 @@ GitHub: https://github.com/LiuChenICBC/ai-search-engine
     echo "$tweet"
     echo ""
     copy_to_clipboard "$tweet"
+    echo ""
+    echo "正在打开浏览器..."
+    open "https://twitter.com/compose/tweet"
 }
 
 get_blog_cn() {
@@ -435,6 +462,9 @@ get_blog_cn() {
         cat "$file"
         echo ""
         copy_to_clipboard "$(cat "$file")"
+        echo ""
+        echo "正在打开浏览器..."
+        open "https://juejin.cn/editor/drafts/new"
     else
         echo "文件不存在: $file"
     fi
@@ -448,6 +478,9 @@ get_blog_en() {
         cat "$file"
         echo ""
         copy_to_clipboard "$(cat "$file")"
+        echo ""
+        echo "正在打开浏览器..."
+        open "https://medium.com/new-story"
     else
         echo "文件不存在: $file"
     fi
