@@ -192,17 +192,14 @@ class LLMClient:
                 for start in range(last_brace, -1, -1):
                     if text[start] == "{":
                         candidate = text[start : last_brace + 1]
-                        if (
-                            '"needs_research"' in candidate
-                            and '"query_rewrite"' in candidate
-                        ):
+                        if '"needs_research"' in candidate:
                             try:
                                 return json.loads(candidate.strip())
                             except json.JSONDecodeError:
                                 break
-            # 策略3: 非贪婪 regex
+            # 策略3: 非贪婪 regex — 提取包含 needs_research 的最外层 JSON
             match_result = re.search(
-                r'(\{[\s\S]*?"needs_research"[\s\S]*?"query_rewrite"[\s\S]*?\})', text
+                r'(\{[\s\S]*?"needs_research"[\s\S]*?\})', text
             )
             if match_result:
                 try:
