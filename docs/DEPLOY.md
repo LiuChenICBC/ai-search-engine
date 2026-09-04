@@ -60,7 +60,7 @@ ollama pull qwen3:8b
 ```bash
 # 克隆项目
 git clone <repo-url>
-cd www_search
+cd ai-search-engine
 
 # 创建虚拟环境
 python3 -m venv .venv
@@ -135,7 +135,7 @@ uvicorn main:app --host 0.0.0.0 --port 8700 --workers 1
 curl http://localhost:8700/api/health
 
 # 预期响应:
-# {"status": "ok", "service": "www_search", "llm": "connected"}
+# {"status": "ok", "service": "ai-search-engine", "llm": "connected"}
 ```
 
 访问 http://localhost:8700 打开 Web UI。
@@ -152,10 +152,10 @@ curl http://localhost:8700/api/health
 
 ```bash
 # 使用 nohup 后台运行
-nohup uvicorn main:app --host 0.0.0.0 --port 8700 > www_search.log 2>&1 &
+nohup uvicorn main:app --host 0.0.0.0 --port 8700 > ai-search-engine.log 2>&1 &
 
 # 查看日志
-tail -f www_search.log
+tail -f ai-search-engine.log
 
 # 停止服务
 lsof -ti:8700 | xargs kill
@@ -174,7 +174,7 @@ cat > ~/Library/LaunchAgents/com.wwwsearch.plist << 'EOF'
     <string>com.wwwsearch</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/yourname/projects/www_search/.venv/bin/uvicorn</string>
+        <string>/Users/yourname/projects/ai-search-engine/.venv/bin/uvicorn</string>
         <string>main:app</string>
         <string>--host</string>
         <string>0.0.0.0</string>
@@ -182,7 +182,7 @@ cat > ~/Library/LaunchAgents/com.wwwsearch.plist << 'EOF'
         <string>8700</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/yourname/projects/www_search</string>
+    <string>/Users/yourname/projects/ai-search-engine</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>WWW_SEARCH_ADMIN_PASSWORD</key>
@@ -195,9 +195,9 @@ cat > ~/Library/LaunchAgents/com.wwwsearch.plist << 'EOF'
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/yourname/projects/www_search/www_search.log</string>
+    <string>/Users/yourname/projects/ai-search-engine/ai-search-engine.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/yourname/projects/www_search/www_search.error.log</string>
+    <string>/Users/yourname/projects/ai-search-engine/ai-search-engine.error.log</string>
 </dict>
 </plist>
 EOF
@@ -247,7 +247,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8700"]
 version: '3.8'
 
 services:
-  www_search:
+  ai-search-engine:
     build: .
     ports:
       - "8700:8700"

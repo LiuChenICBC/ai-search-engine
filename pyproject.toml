@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LiuChen/www_search"
+Homepage = "https://github.com/LiuChenICBC/ai-search-engine"
 
 [tool.hatch.build.targets.wheel]
 packages = ["agent", "fetcher", "llm", "search", "routes", "ui", "config"]

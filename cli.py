@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""www_search CLI - 命令行版 AI 搜索"""
+"""AI Search Engine CLI - 命令行版 AI 搜索"""
 
 import argparse
 import sys
@@ -29,7 +29,7 @@ def run_search(query: str, config_path: str = "config.yaml"):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="www_search - Perplexica-like AI Search Engine",
+        description="ai-search-engine - Perplexica-like AI Search Engine",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 用法示例:

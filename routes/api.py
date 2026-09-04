@@ -156,14 +156,14 @@ def create_api_routes(app: FastAPI):
                 executor,
                 lambda: agent.llm.chat([{"role": "user", "content": "ok"}]),
             )
-            return {"status": "ok", "service": "www_search", "llm": "connected"}
+            return {"status": "ok", "service": "ai-search-engine", "llm": "connected"}
         except Exception as e:
             logger.error(f"503 GET /api/health - LLM 连通性检查失败: {e}")
             return JSONResponse(
                 status_code=503,
                 content={
                     "status": "degraded",
-                    "service": "www_search",
+                    "service": "ai-search-engine",
                     "llm_error": str(e),
                 },
             )

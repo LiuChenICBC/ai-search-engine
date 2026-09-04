@@ -1,4 +1,4 @@
-"""www_search - FastAPI 入口
+"""AI Search Engine - FastAPI 入口
 
 模块化架构:
 - middleware.py: 中间件 (API Key 认证, CSRF, 安全响应头)
@@ -118,7 +118,7 @@ async def lifespan(app: FastAPI):
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title="www_search",
+    title="ai-search-engine",
     description="Perplexica-like AI Search Engine - 基于多源搜索和 LLM 的智能问答系统",
     version="1.0.0",
     lifespan=lifespan,

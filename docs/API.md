@@ -20,7 +20,7 @@ Web UI 首页，返回 HTML 页面。
 ```json
 {
   "status": "ok",
-  "service": "www_search",
+  "service": "ai-search-engine",
   "llm": "connected"
 }
 ```
@@ -29,7 +29,7 @@ Web UI 首页，返回 HTML 页面。
 ```json
 {
   "status": "degraded",
-  "service": "www_search",
+  "service": "ai-search-engine",
   "llm_error": "Connection refused"
 }
 ```

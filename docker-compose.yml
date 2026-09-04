@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  www_search:
+  ai-search-engine:
     build: .
     ports:
       - "8700:8700"

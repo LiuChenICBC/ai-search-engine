@@ -1,4 +1,4 @@
-# www_search - Perplexica 风格 AI 搜索引擎
+# ai-search-engine - Perplexica 风格 AI 搜索引擎
 
 基于 FastAPI 的本地 AI 搜索引擎，支持多搜索引擎聚合、网页内容抓取和 LLM 综合回答。
 
@@ -24,7 +24,7 @@
 ```bash
 # 克隆项目
 git clone <repo-url>
-cd www_search
+cd ai-search-engine
 
 # 创建虚拟环境
 python3 -m venv .venv
@@ -67,7 +67,7 @@ uvicorn main:app --host 0.0.0.0 --port 8700 --workers 1
 ## 项目结构
 
 ```
-www_search/
+ai-search-engine/
 ├── agent/              # 研究代理（编排搜索、抓取、LLM）
 ├── fetcher/            # 网页内容抓取
 ├── llm/                # LLM 客户端
