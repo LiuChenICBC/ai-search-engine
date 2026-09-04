@@ -198,9 +198,7 @@ class LLMClient:
                             except json.JSONDecodeError:
                                 break
             # 策略3: 非贪婪 regex — 提取包含 needs_research 的最外层 JSON
-            match_result = re.search(
-                r'(\{[\s\S]*?"needs_research"[\s\S]*?\})', text
-            )
+            match_result = re.search(r'(\{[\s\S]*?"needs_research"[\s\S]*?\})', text)
             if match_result:
                 try:
                     return json.loads(match_result.group())

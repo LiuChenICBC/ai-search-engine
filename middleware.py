@@ -246,6 +246,7 @@ class AdminCSRFMiddleware(BaseHTTPMiddleware):
             if not validate_csrf_token(session_token, form_token_str):
                 logger.warning(f"CSRF 验证失败: {request.method} {request.url.path}")
                 from urllib.parse import quote
+
                 flash_msg = quote("安全验证失败，请刷新页面重试")
                 return RedirectResponse(
                     url=f"/admin?flash=error:{flash_msg}", status_code=303
