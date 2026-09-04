@@ -2,14 +2,30 @@
 
 基于 FastAPI 的本地 AI 搜索引擎，支持多搜索引擎聚合、网页内容抓取和 LLM 综合回答。
 
+灵感来自 [Perplexica](https://github.com/ItzCrazyKns/Perplexica)，但在安全性、多用户管理和部署便捷性上做了大幅增强。
+
+## 为什么选择 ai-search-engine？
+
+| 维度 | ai-search-engine | Perplexica |
+|------|-----------------|-----------|
+| 技术栈 | Python / FastAPI | TypeScript / Next.js |
+| 数据库 | SQLite（零依赖） | PostgreSQL |
+| 部署门槛 | 只需 Python 3.11+ | 需要 Node.js + PostgreSQL |
+| 多用户认证 | 内置 API Key + 管理后台 | 无（Upcoming Feature） |
+| 安全防护 | CSRF / SSRF / 安全头 / 暴力破解防护 | 基本无 |
+| 搜索容错 | SearXNG + DuckDuckGo 自动降级 + 重试 | 仅 SearXNG |
+| 双模型架构 | 分类用小模型，回答用大模型 | 单模型 |
+| 中文优化 | 查询自动改写为英文搜索 | 无 |
+
 ## 特性
 
-- **多搜索引擎聚合**：支持 SearXNG、DuckDuckGo，可扩展其他引擎
-- **智能研究流程**：LLM 分类 → 多引擎搜索 → 网页抓取 → 综合回答
+- **多搜索引擎聚合**：SearXNG 优先，DuckDuckGo 自动降级，并行搜索 + 超时取消 + 重试退避
+- **智能研究流程**：LLM 分类 → 查询改写为英文 → 多引擎搜索 → 网页抓取 → 综合回答
 - **流式输出**：SSE 实时流式回答
-- **API Key 认证**：SHA-256 哈希存储 + 时序安全比较
-- **管理后台**：用户管理、API Key 管理、使用统计
-- **安全防护**：CSRF、SSRF、XSS、速率限制、登录暴力破解防护
+- **双模型架构**：`classify_model` 处理查询分类（省成本），`model` 生成综合回答
+- **多用户认证**：API Key SHA-256 哈希存储 + 时序安全比较，管理员面板 + 使用统计
+- **生产级安全**：CSRF 双重提交、SSRF 防护、安全响应头、登录暴力破解防护、请求大小限制
+- **零外部依赖**：SQLite WAL 模式，开箱即用，无需 PostgreSQL
 - **可配置**：YAML 配置 LLM/搜索/抓取/服务器参数
 
 ## 快速开始
@@ -23,7 +39,7 @@
 
 ```bash
 # 克隆项目
-git clone <repo-url>
+git clone https://github.com/LiuChenICBC/ai-search-engine.git
 cd ai-search-engine
 
 # 创建虚拟环境
@@ -113,7 +129,7 @@ docker-compose up -d
 
 ## 持续集成
 
-项目使用 GitHub Actions 自动运行 ruff lint 和 pytest 测试。详见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
+项目使用 GitHub Actions 自动运行 ruff lint、ruff format、mypy 类型检查和 pytest 测试。详见 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)。
 
 ## 架构
 
@@ -135,9 +151,10 @@ python3 -m pytest test_*.py --cov=. --cov-report=term-missing
 - CSRF 双重提交（cookie + form token）+ 签名 session
 - SSRF 防护（URL 协议白名单 + DNS 解析后 IP 检查）
 - 登录暴力破解防护（5 次/5 分钟）
-- 安全响应头（CSP, X-Frame-Options, X-Content-Type-Options）
+- 安全响应头（CSP, HSTS, X-Frame-Options, X-Content-Type-Options）
 - Pydantic 输入校验
 - 速率限制（slowapi）
+- 请求大小限制（1MB）
 
 ## 许可证
 
