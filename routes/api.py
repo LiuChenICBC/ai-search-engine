@@ -8,7 +8,6 @@ import asyncio
 import copy
 import json
 import logging
-from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -69,7 +68,7 @@ def create_api_routes(app: FastAPI):
     async def chat(
         req: ChatRequest,
         agent: ResearchAgent = Depends(get_agent_dep),
-        request: Optional[Request] = None,
+        request: Request = ...,  # type: ignore[assignment]
     ):
         """非流式聊天（在线程池中执行，不阻塞事件循环）"""
         loop = asyncio.get_event_loop()
@@ -95,7 +94,7 @@ def create_api_routes(app: FastAPI):
     def chat_stream(
         req: ChatRequest,
         agent: ResearchAgent = Depends(get_agent_dep),
-        request: Optional[Request] = None,
+        request: Request = ...,  # type: ignore[assignment]
     ):
         """流式聊天 - SSE"""
 
@@ -130,7 +129,7 @@ def create_api_routes(app: FastAPI):
     @app.get("/api/config")
     def get_config(
         config: dict = Depends(get_config_dep),
-        request: Optional[Request] = None,
+        request: Request = ...,  # type: ignore[assignment]
     ):
         """获取当前配置（需要认证）"""
         if (
