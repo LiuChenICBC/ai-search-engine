@@ -1,3 +1,12 @@
+<div align="center">
+
+[![CI](https://github.com/LiuChenICBC/ai-search-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/LiuChenICBC/ai-search-engine/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.136.3-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+
+</div>
+
 # ai-search-engine - Perplexica 风格 AI 搜索引擎
 
 基于 FastAPI 的本地 AI 搜索引擎，支持多搜索引擎聚合、网页内容抓取和 LLM 综合回答。
