@@ -703,7 +703,7 @@ def test_search_all_result_dedup():
             ]
 
     with patch(
-        "search.load_search_engines", return_value=[MockEngine1(), MockEngine2()]
+        "search._load_and_cache_engines", return_value=[MockEngine1(), MockEngine2()]
     ):
         results = search_all("test", max_results=5)
         # 3 个唯一 URL，但去重后应为 3 个
@@ -725,7 +725,7 @@ def test_search_all_timeout():
         def search(self, query, max_results):
             return []
 
-    with patch("search.load_search_engines", return_value=[FastEmptyEngine()]):
+    with patch("search._load_and_cache_engines", return_value=[FastEmptyEngine()]):
         results = search_all("test", max_results=5)
         # 空结果返回空列表，不崩溃
         assert isinstance(results, list), f"应返回列表类型, 实际 {type(results)}"
